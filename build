@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+set -e
+
+DEBUG_MODE=
+
+if [ "$1" = "debug" ]; then
+    DEBUG_MODE=debug
+fi
+
+cd com.cdsoftware.lirionizer.targetplatform
+./plugin-builder $DEBUG_MODE ../com.cdsoftware.lirionizer ../com.cdsoftware.lirionizer.test
