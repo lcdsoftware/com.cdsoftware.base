@@ -42,6 +42,10 @@ public class Lirionizer extends CustomProcess{
         String jettyPath ="";
         String bmlaurusPath ="";
         String templatePath = "file://";
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("windows")) {
+        	templatePath="file:///";
+        }
         if (idempiereHome != null) {
 	        String propertiesPath = idempiereHome + "/idempiereEnv.properties";
 	
