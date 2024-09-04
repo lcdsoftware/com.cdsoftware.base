@@ -17,7 +17,9 @@ import java.util.zip.ZipInputStream;
 import org.compiere.model.MAttachment;
 import org.compiere.model.MAttachmentEntry;
 import org.compiere.model.MProcess;
+import org.compiere.model.MProcessPara;
 import org.compiere.model.MSystem;
+import org.compiere.process.ProcessInfoParameter;
 import org.compiere.util.Env;
 import org.compiere.util.Ini;
 
@@ -26,10 +28,17 @@ import com.cdsoftware.lirionizer.base.CustomProcess;
 @org.adempiere.base.annotation.Process
 public class Lirionizer extends CustomProcess{
 	
-	
+	private String p_jettyPath = "";
 	@Override
 	protected void prepare() {
-		// TODO Auto-generated method stub
+		for (ProcessInfoParameter para : getParameter()) {
+			String name = para.getParameterName();
+			if ("jettyPath".equals(name)) {
+				p_jettyPath = para.getParameterAsString();
+			} else {
+				MProcessPara.validateUnknownParameter(getProcessInfo().getAD_Process_ID(), para);
+			}			
+		}
 		
 	}
 
@@ -70,6 +79,8 @@ public class Lirionizer extends CustomProcess{
 	        		.concat(idempiereCompilation)
 	        		.concat("_jar-_-any-/webapp/");
 	        
+	        if(p_jettyPath.length()>0)
+	        	jettyPath=idempiereHome.concat(p_jettyPath);
 	        bmlaurusPath = jettyPath.concat("org/bmlaurus/home");
         }
         else
