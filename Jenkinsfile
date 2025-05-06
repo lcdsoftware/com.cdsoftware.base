@@ -1,7 +1,7 @@
 pipeline {
     agent none
     environment {
-        PLUGIN_NAME = "com.cdsoftware.lirionizer"
+        PLUGIN_NAME = "com.cdsoftware.base"
         IDEMPIERE_VERSION = "10.0.0"
     }
     stages {
