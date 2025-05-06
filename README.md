@@ -1,4 +1,4 @@
-# com.cdsoftware.lirionizer
+# com.cdsoftware.base
 
 - Copyright: 2023 cdsoftware
 - Repository: ../
@@ -14,9 +14,9 @@ Put the plugin description here
 
 ## Components
 
-- iDempiere Plugin [com.cdsoftware.lirionizer](com.cdsoftware.lirionizer)
-- iDempiere Unit Test Fragment [com.cdsoftware.lirionizer.test](com.cdsoftware.lirionizer.test)
-- iDempiere Target Platform [com.cdsoftware.lirionizer.targetplatform](com.cdsoftware.lirionizer.targetplatform)
+- iDempiere Plugin [com.cdsoftware.base](com.cdsoftware.base)
+- iDempiere Unit Test Fragment [com.cdsoftware.base.test](com.cdsoftware.lirionizer.test)
+- iDempiere Target Platform [com.cdsoftware.base.targetplatform](com.cdsoftware.lirionizer.targetplatform)
 
 ## Prerequisites
 

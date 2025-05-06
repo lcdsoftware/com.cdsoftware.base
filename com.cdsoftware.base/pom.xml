@@ -11,7 +11,7 @@
 	<properties>
 		<revision>10.0.0-SNAPSHOT</revision>
 	</properties>
-	<artifactId>com.cdsoftware.lirionizer</artifactId>
+	<artifactId>com.cdsoftware.base</artifactId>
 	<packaging>eclipse-plugin</packaging>
 	<build>
 		<plugins>
