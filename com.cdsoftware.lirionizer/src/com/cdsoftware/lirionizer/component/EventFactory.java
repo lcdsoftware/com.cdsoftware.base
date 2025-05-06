@@ -16,23 +16,19 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.base.base;
+package com.cdsoftware.lirionizer.component;
 
-import org.adempiere.webui.panel.ADForm;
-import org.adempiere.webui.panel.IFormController;
-import org.zkoss.zk.ui.event.Event;
-import org.zkoss.zk.ui.event.EventListener;
+import org.adempiere.base.AnnotationBasedEventManager;
 
 /**
- * Custom class for forms
+ * Event Factory
  */
-public abstract class CustomForm extends ADForm implements IFormController, EventListener<Event> {
-
-	private static final long serialVersionUID = 1393259812994414770L;
+public class EventFactory extends AnnotationBasedEventManager {
 
 	@Override
-	public ADForm getForm() {
-		return this;
+	public String[] getPackages() {
+		return new String[] { "com.cdsoftware.lirionizer.event" };
 	}
 
 }
+

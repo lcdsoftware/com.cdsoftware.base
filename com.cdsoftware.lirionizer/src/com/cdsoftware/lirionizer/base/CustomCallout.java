@@ -16,7 +16,7 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.base.base;
+package com.cdsoftware.lirionizer.base;
 
 import java.util.Properties;
 

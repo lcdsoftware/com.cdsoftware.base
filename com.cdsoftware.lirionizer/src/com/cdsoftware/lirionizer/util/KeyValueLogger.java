@@ -16,7 +16,7 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.base.util;
+package com.cdsoftware.lirionizer.util;
 
 import static java.util.stream.Collectors.joining;
 

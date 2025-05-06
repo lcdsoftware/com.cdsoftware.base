@@ -1,4 +1,4 @@
-package com.cdsoftware.base.process;
+package com.cdsoftware.lirionizer.process;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -23,7 +23,7 @@ import org.compiere.process.ProcessInfoParameter;
 import org.compiere.util.Env;
 import org.compiere.util.Ini;
 
-import com.cdsoftware.base.base.CustomProcess;
+import com.cdsoftware.lirionizer.base.CustomProcess;
 
 @org.adempiere.base.annotation.Process
 public class Lirionizer extends CustomProcess{
