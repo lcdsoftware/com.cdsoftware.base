@@ -16,7 +16,7 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.lirionizer.util;
+package com.cdsoftware.base.util;
 
 import java.io.FileWriter;
 import java.io.IOException;

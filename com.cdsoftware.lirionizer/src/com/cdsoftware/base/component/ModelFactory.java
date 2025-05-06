@@ -16,18 +16,18 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.lirionizer.component;
+package com.cdsoftware.base.component;
 
-import org.adempiere.base.AnnotationBasedProcessFactory;
+import org.adempiere.base.AnnotationBasedModelFactory;
 
 /**
- * Process Factory
+ * Model Factory
  */
-public class ProcessFactory extends AnnotationBasedProcessFactory {
+public class ModelFactory extends AnnotationBasedModelFactory {
 
 	@Override
 	protected String[] getPackages() {
-		return new String[] { "com.cdsoftware.lirionizer.process" };
+		return new String[] { "com.cdsoftware.lirionizer.model" };
 	}
 
 }

@@ -16,7 +16,7 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.lirionizer.base;
+package com.cdsoftware.base.base;
 
 import java.net.URL;
 import java.util.Enumeration;

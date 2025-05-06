@@ -16,7 +16,7 @@
  * Copyright (C) 2023 cdsoftware and contributors (see README.md file).
  */
 
-package com.cdsoftware.lirionizer.component;
+package com.cdsoftware.base.component;
 
 import org.adempiere.webui.factory.AnnotationBasedFormFactory;
 
