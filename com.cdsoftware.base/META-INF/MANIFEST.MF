@@ -3,7 +3,7 @@ Bundle-Category: idempiere-plugin
 Bundle-ManifestVersion: 2
 Bundle-Name: com.cdsoftware.lirionizer
 Bundle-SymbolicName: com.cdsoftware.base
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 11.0.0.qualifier
 Bundle-Vendor: cdsoftware
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.apache.commons.lang3,
