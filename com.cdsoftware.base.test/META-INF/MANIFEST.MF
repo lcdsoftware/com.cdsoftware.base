@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: com.cdsoftware.base Test
 Bundle-SymbolicName: com.cdsoftware.base.test
-Bundle-Version: 10.0.0.qualifier
+Bundle-Version: 11.0.0.qualifier
 Bundle-Vendor: cdsoftware
-Fragment-Host: com.cdsoftware.base;bundle-version="10.0.0.qualifier"
+Fragment-Host: com.cdsoftware.base;bundle-version="11.0.0.qualifier"
 Bundle-ClassPath: .,
  lib/junit-jupiter-engine.jar,
  lib/junit-jupiter-api.jar,
