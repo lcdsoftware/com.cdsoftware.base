@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-Category: idempiere-plugin
 Bundle-ManifestVersion: 2
-Bundle-Name: com.cdsoftware.lirionizer
+Bundle-Name: com.cdsoftware.base
 Bundle-SymbolicName: com.cdsoftware.base
 Bundle-Version: 10.0.0.qualifier
 Bundle-Vendor: cdsoftware
