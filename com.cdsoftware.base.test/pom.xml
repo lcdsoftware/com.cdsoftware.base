@@ -6,7 +6,7 @@
 		<groupId>org.idempiere</groupId>
 		<artifactId>org.idempiere.parent</artifactId>
 		<version>${revision}</version>
-		<relativePath>../../../../Documents/source/idempiere10/org.idempiere.parent/pom.xml</relativePath>
+		<relativePath>../../../../idempiereSources/idempiere12/idempiere/org.idempiere.parent/pom.xml</relativePath>
 	</parent>
         <properties>
 		<revision>10.0.0-SNAPSHOT</revision>
