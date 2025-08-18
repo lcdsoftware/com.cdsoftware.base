@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAttachment;
 import org.compiere.model.MAttachmentEntry;
 import org.compiere.model.MProcess;
@@ -69,8 +70,8 @@ public class Lirionizer extends CustomProcess{
 	        }        
 	        MSystem sy = MSystem.get(Env.getCtx());
 	        idempiereCompilation = sy.getLastBuildInfo();
-	        idempiereCompilation = idempiereCompilation.replace('.', '_');        
-	        jettyPath = idempiereHome
+	        //idempiereCompilation = idempiereCompilation.replace('.', '_');        
+	        /*jettyPath = idempiereHome
 	        		.concat("/jettyhome/work/jetty-")
 	        		.concat(server)
 	        		.concat("-")
@@ -79,9 +80,16 @@ public class Lirionizer extends CustomProcess{
 	        		.concat(idempiereCompilation)
 	        		.concat("_jar-_-any-/webapp/");
 	        
-	        if(p_jettyPath.length()>0)
-	        	jettyPath=idempiereHome.concat(p_jettyPath);
-	        bmlaurusPath = jettyPath.concat("org/bmlaurus/home");
+	        if(p_jettyPath!=null)
+		        if(p_jettyPath.length()>0)
+		        	jettyPath=idempiereHome.concat(p_jettyPath);*/
+
+	        //On Idempiere 12 the route was changed
+	        jettyPath = idempiereHome
+	        		.concat("/plugins/")
+	        		.concat("org.adempiere.server_")
+	        		.concat(idempiereCompilation);
+	        bmlaurusPath = jettyPath.concat("/org/bmlaurus/home");
         }
         else
         	return null;
@@ -95,6 +103,10 @@ public class Lirionizer extends CustomProcess{
         		File file = entry.getFile();
         		Path origen = Paths.get(file.getPath());
         		Path destino = Paths.get(jettyPath+"/"+entry.getName());
+        		if(!Files.exists(origen))
+        			throw new AdempiereException("Ruta de Origen no existe: "+origen);
+        		if(!Files.exists(destino))
+        			throw new AdempiereException("Ruta de Destino no existe: "+destino);
         		Files.copy(origen, destino,StandardCopyOption.REPLACE_EXISTING);
         	}
         	else if(entry.getName().compareToIgnoreCase("home.properties")==0) {
