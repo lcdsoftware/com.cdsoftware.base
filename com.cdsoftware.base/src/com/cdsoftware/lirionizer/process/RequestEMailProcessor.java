@@ -61,6 +61,8 @@ import com.cdsoftware.lirionizer.base.CustomProcess;
  *  
  *  IMAPHost format: {imap|imaps}://[IMAPHostURL]:[Port] example: imaps://imap.gmail.com:993
  */
+
+@org.adempiere.base.annotation.Process
 public class RequestEMailProcessor extends CustomProcess implements ProcessEmailHandle
 {
 	protected String	p_IMAPHost = null;
