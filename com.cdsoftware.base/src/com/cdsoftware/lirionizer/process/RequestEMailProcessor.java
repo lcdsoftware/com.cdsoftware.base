@@ -286,24 +286,28 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		String fromAddress = emailContent.fromAddress.get(0);		
 		
 		int maxlen = MColumn.get(getCtx(), MRequest.Table_Name, MRequest.COLUMNNAME_DocumentNo).getFieldLength();
-		//String documentNo = emailContent.messageID;
-		String documentNo = "";
+		/*String documentNo = emailContent.messageID;
+		//String documentNo = "";
 		if (documentNo.length() > maxlen)
 			documentNo = documentNo.substring(0,30);
-		
+		*/
 		// Review if the e-mail was already created, comparing Message-ID+From+body
 		int retValuedup = 0;
 		String sqldup = "SELECT R_Request_ID FROM R_Request "
 			 + "WHERE AD_Client_ID = ? "
-			 + "AND DocumentNo = ? "
+			 //+ "AND DocumentNo = ? "
+			 + "AND Summary LIKE ? "
 			 + "AND StartDate = ?";
+		String summaryPattern = "messageID: " + emailContent.messageID + "%";
+		
 		PreparedStatement pstmtdup = null;
 		ResultSet rsdup = null;
 		try 
 		{
 			pstmtdup = DB.prepareStatement (sqldup, null);
 			pstmtdup.setInt(1, getAD_Client_ID());
-			pstmtdup.setString(2, documentNo);
+			//pstmtdup.setString(2, documentNo);
+			pstmtdup.setString(2, summaryPattern);
 			pstmtdup.setTimestamp(3, new Timestamp(emailContent.sentDate.getTime()));
 			rsdup = pstmtdup.executeQuery ();
 			if (rsdup.next ())
@@ -324,7 +328,33 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		// Analyze subject if Re: find the original request by subject + e-mail and add an action
 		int request_upd = 0;
-		String sqlupd = "SELECT r_request_id "
+		String cleanSubject = emailContent.subject;
+		boolean isReply = false;
+		PreparedStatement pstmtupd = null;
+		ResultSet rsupd = null;
+		
+		// Iteratively remove "Re: " prefixes (handles "Re: Re: Fwd: ...")
+		// We normalize to lowercase for a robust check
+		while (cleanSubject.toLowerCase().startsWith("re: ")) {
+			cleanSubject = cleanSubject.substring(4).trim(); // Remove "Re: " and trim spaces
+			isReply = true;
+		}	
+		
+		// Only search for an update if it's a reply
+		if (isReply) {
+			String sqlupd = "SELECT r_request_id "
+					 + "  FROM r_request "
+					 + " WHERE ad_client_id = ? "
+					 + "   AND summary LIKE ? "  // Pattern for FROM address
+					 + "   AND summary LIKE ? "; // Pattern for Subject
+
+				// Create the search patterns based on the new Summary format
+				// Format: "messageID: ...\n\nFROM: [fromAddress]\n[subject]\n[body]"
+				
+				String fromPattern = "%\n\nFROM: " + fromAddress + "%";
+				String subjectPattern = "%\n" + cleanSubject + "%"; // Match the cleaned subject
+				
+		/*String sqlupd = "SELECT r_request_id "
 			 + "  FROM r_request "
 			 + " WHERE ad_client_id = ? "
 			 + "   AND summary LIKE 'FROM: ' || ? || '%' "
@@ -343,31 +373,33 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 			 + "                   || CHR (10) "
 			 + "                   || SUBSTR (?, 5) "
 			 + "           ) "
-			 + "       ) ";
-		PreparedStatement pstmtupd = null;
-		ResultSet rsupd = null;
-		try 
-		{
-			pstmtupd = DB.prepareStatement (sqlupd, null);
-			pstmtupd.setInt(1, getAD_Client_ID());
-			pstmtupd.setString(2, fromAddress);
-			pstmtupd.setString(3, emailContent.subject);
-			pstmtupd.setString(4, emailContent.subject);
-			pstmtupd.setString(5, emailContent.subject);
-			pstmtupd.setString(6, fromAddress);
-			pstmtupd.setString(7, emailContent.subject);
-			rsupd = pstmtupd.executeQuery ();
-			if (rsupd.next ())
-				request_upd = rsupd.getInt(1);
-		} 
-		catch (SQLException e) 
-		{
-			throw e;
-		}
-		finally
-		{
-			DB.close(rsupd,pstmtupd);
-			rsupd = null;pstmtupd = null;
+			 + "       ) ";*/
+
+			try 
+			{
+				pstmtupd = DB.prepareStatement (sqlupd, null);
+				pstmtupd.setInt(1, getAD_Client_ID());
+				/*pstmtupd.setString(2, fromAddress);
+				pstmtupd.setString(3, emailContent.subject);
+				pstmtupd.setString(4, emailContent.subject);
+				pstmtupd.setString(5, emailContent.subject);
+				pstmtupd.setString(6, fromAddress);
+				pstmtupd.setString(7, emailContent.subject);*/
+				pstmtupd.setString(2, fromPattern);
+				pstmtupd.setString(3, subjectPattern);
+				rsupd = pstmtupd.executeQuery ();
+				if (rsupd.next ())
+					request_upd = rsupd.getInt(1);
+			} 
+			catch (SQLException e) 
+			{
+				throw e;
+			}
+			finally
+			{
+				DB.close(rsupd,pstmtupd);
+				rsupd = null;pstmtupd = null;
+			}
 		}
 		if (request_upd > 0) {
 			if (log.isLoggable(Level.INFO)) log.info("msg -> " + emailContent.subject + " is an answer for req " + request_upd);
@@ -375,20 +407,26 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 			return;
 		}
 		
+		
 		MRequest req = new MRequest(getCtx(), 0, trxName);
 		// Subject as summary
 		/*StringBuilder mailSubject = new StringBuilder("FROM: ").append(fromAddress).append("\n").append(emailContent.subject);
 		req.setSummary(mailSubject.toString());*/
 		
-		// Body as summary
-		StringBuilder mailBody = new StringBuilder("FROM: ") .append(emailContent.fromAddress.get(0)).append("\n").append(emailContent.getTextContent());
-		req.setSummary(mailBody.toString());	
+		// messageID Body and Subject as summary
+		StringBuilder mailID = new StringBuilder("messageID: ").append(emailContent.messageID);
+		StringBuilder mailSubject = new StringBuilder("\n\nFROM: ").append(fromAddress).append("\n").append(emailContent.subject);
+		StringBuilder mailBody = new StringBuilder("\n").append(emailContent.getTextContent());
+		req.setSummary(mailID.toString().concat(mailSubject.toString()).concat("\n").concat(mailBody.toString()));	
 		
 		// Body as result
 		//TODO:1. improve to when email only html content, convert it to text and set here
 		//TODO:2. improve to add control display html at form, no need open attach to see
 		//mailBody = new StringBuilder("FROM: ") .append(emailContent.fromAddress.get(0)).append("\n").append(emailContent.getTextContent());
-		req.setResult(mailBody.toString());
+		
+		//Nothing in result
+		//req.setResult(mailBody.toString());
+		
 		// Message-ID as documentNo
 		//DocumentNo is now from default sequence
 		//req.setDocumentNo(documentNo);
