@@ -37,6 +37,7 @@ import javax.mail.Store;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAttachment;
 import org.compiere.model.MColumn;
+import org.compiere.model.MProcessPara;
 import org.compiere.model.MRequest;
 import org.compiere.model.MRequestType;
 import org.compiere.model.MUser;
@@ -45,8 +46,6 @@ import org.compiere.util.DB;
 import org.compiere.util.EmailSrv;
 import org.compiere.util.EmailSrv.EmailContent;
 import org.compiere.util.EmailSrv.ProcessEmailHandle;
-
-
 import org.compiere.util.Msg;
 import org.compiere.util.Trx;
 
@@ -81,6 +80,7 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	protected int R_RequestType_ID = 0;
 	protected String p_DefaultPriority = null;
 	protected String p_DefaultConfidentiality = null;
+	protected String p_HTMLAttachmentType = "H";
 
 	protected int noProcessed = 0;
 	protected int noRequest = 0;
@@ -93,10 +93,6 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	protected static final int		ERROR = 0;
 	/**	Process Request				*/
 	protected static final int		REQUEST = 1;
-	/**	Process Workflow			*/
-	// private static final int		WORKFLOW = 2;
-	/**	Process Delivery Confirm	*/
-	// private static final int		DELIVERY = 9;
 	
 	protected Folder errorFolder;
 	protected Folder requestFolder;
@@ -140,9 +136,14 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 				p_DefaultConfidentiality = ((String)para[i].getParameter());
 			else if (name.equals("p_NestInbox"))
 				p_NestInbox = "Y".equalsIgnoreCase(para[i].getParameter().toString());
+			else if (name.equals("HTMLAttachmentType"))
+				p_HTMLAttachmentType = para[i].getParameterAsString();
 			else
-				log.log(Level.SEVERE, "prepare - Unknown Parameter: " + name);
+				MProcessPara.validateUnknownParameter(getProcessInfo().getAD_Process_ID(), para[i]);
 		}
+		
+		if(p_HTMLAttachmentType == null)
+			p_HTMLAttachmentType = "H";
 		
 	}	//	prepare
 
@@ -276,10 +277,9 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	
 	/**
 	 * 	Create request
-	 *	@param msg message
-	 * @return 
-	 *	@return Type of Message
-	 * @throws Exception 
+	 * @param emailContent
+	 * @param trxName
+	 * @throws Exception
 	 */
 	protected void createRequest(EmailContent emailContent, String trxName) throws Exception {
 		// Assign from variable
@@ -377,13 +377,18 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		MRequest req = new MRequest(getCtx(), 0, trxName);
 		// Subject as summary
-		StringBuilder msgreq = new StringBuilder("FROM: ").append(fromAddress).append("\n").append(emailContent.subject);
-		req.setSummary(msgreq.toString());
+		/*StringBuilder mailSubject = new StringBuilder("FROM: ").append(fromAddress).append("\n").append(emailContent.subject);
+		req.setSummary(mailSubject.toString());*/
+		
+		// Body as summary
+		StringBuilder mailBody = new StringBuilder("FROM: ") .append(emailContent.fromAddress.get(0)).append("\n").append(emailContent.getTextContent());
+		req.setSummary(mailBody.toString());	
+		
 		// Body as result
 		//TODO:1. improve to when email only html content, convert it to text and set here
 		//TODO:2. improve to add control display html at form, no need open attach to see
-		msgreq = new StringBuilder("FROM: ") .append(emailContent.fromAddress.get(0)).append("\n").append(emailContent.getTextContent());
-		req.setResult(msgreq.toString());
+		//mailBody = new StringBuilder("FROM: ") .append(emailContent.fromAddress.get(0)).append("\n").append(emailContent.getTextContent());
+		req.setResult(mailBody.toString());
 		// Message-ID as documentNo
 		//DocumentNo is now from default sequence
 		//req.setDocumentNo(documentNo);
@@ -465,14 +470,26 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		if (log.isLoggable(Level.INFO)) log.info("created request " + req.getR_Request_ID() + " from msg -> " + emailContent.subject);
 		
-		String htmlContent = emailContent.getHtmlContent(true);
-		if (htmlContent != null){
-			MAttachment attach = req.createAttachment();
-			
-			attach.addEntry(emailContent.subject + ".html", emailContent.getHtmlContent(true).getBytes(Charset.forName("UTF-8")));
-			attach.saveEx(trxName);
+		if("H".equals(p_HTMLAttachmentType)) {
+			String htmlContent = emailContent.getHtmlContent(true);
+			if (htmlContent != null){
+				MAttachment attach = req.createAttachment();
+				
+				attach.addEntry(emailContent.subject + ".html", emailContent.getHtmlContent(true).getBytes(Charset.forName("UTF-8")));
+				attach.saveEx(trxName);
+			}
+		} else if("I".equals(p_HTMLAttachmentType)) {
+			ArrayList<BodyPart> imagesList = emailContent.getHTMLImageBodyParts();
+			if(imagesList != null) {
+				for(BodyPart image: imagesList) {
+					MAttachment attach = req.createAttachment();
+					
+					attach.addEntry(image.getFileName(), EmailSrv.getBinaryData(image));
+					attach.saveEx(trxName);
+				}
+			}
 		}
-		
+				
 		for (BodyPart attachFile : emailContent.lsAttachPart){
 			MAttachment attach = req.createAttachment();
 			attach.addEntry(attachFile.getFileName(), EmailSrv.getBinaryData(attachFile));
