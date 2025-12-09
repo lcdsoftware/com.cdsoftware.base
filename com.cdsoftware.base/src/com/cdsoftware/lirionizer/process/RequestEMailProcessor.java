@@ -56,7 +56,6 @@ import com.cdsoftware.lirionizer.base.CustomProcess;
  *	
  *  @author Carlos Ruiz based on initial work by Jorg Janke - sponsored by DigitalArmour
  *  @version $Id: RequestEMailProcessor.java,v 1.2 2006/10/23 06:01:20 cruiz Exp $
- *  hieplq:separate email process to other class for easy re-use and do IDEMPIERE-2244
  *  
  *  IMAPHost format: {imap|imaps}://[IMAPHostURL]:[Port] example: imaps://imap.gmail.com:993
  */
@@ -286,19 +285,15 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		String fromAddress = emailContent.fromAddress.get(0);		
 		
 		int maxlen = MColumn.get(getCtx(), MRequest.Table_Name, MRequest.COLUMNNAME_DocumentNo).getFieldLength();
-		/*String documentNo = emailContent.messageID;
-		//String documentNo = "";
-		if (documentNo.length() > maxlen)
-			documentNo = documentNo.substring(0,30);
-		*/
+
 		// Review if the e-mail was already created, comparing Message-ID+From+body
 		int retValuedup = 0;
+		
 		String sqldup = "SELECT R_Request_ID FROM R_Request "
-			 + "WHERE AD_Client_ID = ? "
-			 //+ "AND DocumentNo = ? "
-			 + "AND Summary LIKE ? "
-			 + "AND StartDate = ?";
-		String summaryPattern = "messageID: " + emailContent.messageID + "%";
+				 + "WHERE AD_Client_ID = ? "
+				 + "AND CDS_EmailProcMessageID = ? "
+				 + "AND CDS_EmailProcFrom = ? "
+				 + "AND StartDate = ?";
 		
 		PreparedStatement pstmtdup = null;
 		ResultSet rsdup = null;
@@ -306,9 +301,9 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		{
 			pstmtdup = DB.prepareStatement (sqldup, null);
 			pstmtdup.setInt(1, getAD_Client_ID());
-			//pstmtdup.setString(2, documentNo);
-			pstmtdup.setString(2, summaryPattern);
-			pstmtdup.setTimestamp(3, new Timestamp(emailContent.sentDate.getTime()));
+			pstmtdup.setString(2, emailContent.messageID);
+			pstmtdup.setString(3, fromAddress);
+			pstmtdup.setTimestamp(4, new Timestamp(emailContent.sentDate.getTime()));
 			rsdup = pstmtdup.executeQuery ();
 			if (rsdup.next ())
 				retValuedup = rsdup.getInt(1);
@@ -342,50 +337,21 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		// Only search for an update if it's a reply
 		if (isReply) {
+
 			String sqlupd = "SELECT r_request_id "
 					 + "  FROM r_request "
 					 + " WHERE ad_client_id = ? "
-					 + "   AND summary LIKE ? "  // Pattern for FROM address
-					 + "   AND summary LIKE ? "; // Pattern for Subject
-
+					 + "   AND CDS_EmailProcFrom = ? "
+					 + "   AND summary LIKE ? ";
 				// Create the search patterns based on the new Summary format
-				// Format: "messageID: ...\n\nFROM: [fromAddress]\n[subject]\n[body]"
-				
-				String fromPattern = "%\n\nFROM: " + fromAddress + "%";
+
 				String subjectPattern = "%\n" + cleanSubject + "%"; // Match the cleaned subject
 				
-		/*String sqlupd = "SELECT r_request_id "
-			 + "  FROM r_request "
-			 + " WHERE ad_client_id = ? "
-			 + "   AND summary LIKE 'FROM: ' || ? || '%' "
-			 + "   AND (   documentno = "
-			 + "              SUBSTR "
-			 + "                 (?, "
-			 + "                  INSTR "
-			 + "                      (?, "
-			 + "                       '<' "
-			 + "                      ) "
-			 + "                 ) "
-			 + "        OR (    ? LIKE 'Re: %' "
-			 + "            AND summary = "
-			 + "                      'FROM: ' "
-			 + "                   || ? "
-			 + "                   || CHR (10) "
-			 + "                   || SUBSTR (?, 5) "
-			 + "           ) "
-			 + "       ) ";*/
-
 			try 
 			{
 				pstmtupd = DB.prepareStatement (sqlupd, null);
 				pstmtupd.setInt(1, getAD_Client_ID());
-				/*pstmtupd.setString(2, fromAddress);
-				pstmtupd.setString(3, emailContent.subject);
-				pstmtupd.setString(4, emailContent.subject);
-				pstmtupd.setString(5, emailContent.subject);
-				pstmtupd.setString(6, fromAddress);
-				pstmtupd.setString(7, emailContent.subject);*/
-				pstmtupd.setString(2, fromPattern);
+				pstmtupd.setString(2, fromAddress);
 				pstmtupd.setString(3, subjectPattern);
 				rsupd = pstmtupd.executeQuery ();
 				if (rsupd.next ())
@@ -409,27 +375,15 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		
 		MRequest req = new MRequest(getCtx(), 0, trxName);
-		// Subject as summary
-		/*StringBuilder mailSubject = new StringBuilder("FROM: ").append(fromAddress).append("\n").append(emailContent.subject);
-		req.setSummary(mailSubject.toString());*/
-		
-		// messageID Body and Subject as summary
-		StringBuilder mailID = new StringBuilder("messageID: ").append(emailContent.messageID);
-		StringBuilder mailSubject = new StringBuilder("\n\nFROM: ").append(fromAddress).append("\n").append(emailContent.subject);
+
+		// Subject and body as summary
+		StringBuilder mailSubject = new StringBuilder(emailContent.subject);
 		StringBuilder mailBody = new StringBuilder("\n").append(emailContent.getTextContent());
-		req.setSummary(mailID.toString().concat(mailSubject.toString()).concat("\n").concat(mailBody.toString()));	
-		
-		// Body as result
-		//TODO:1. improve to when email only html content, convert it to text and set here
-		//TODO:2. improve to add control display html at form, no need open attach to see
-		//mailBody = new StringBuilder("FROM: ") .append(emailContent.fromAddress.get(0)).append("\n").append(emailContent.getTextContent());
-		
-		//Nothing in result
-		//req.setResult(mailBody.toString());
-		
-		// Message-ID as documentNo
-		//DocumentNo is now from default sequence
-		//req.setDocumentNo(documentNo);
+		req.setSummary(mailSubject.toString().concat("\n").concat(mailBody.toString()));	
+			
+		// Set new custom columns
+		req.set_ValueOfColumn("CDS_EmailProcMessageID", emailContent.messageID);
+		req.set_ValueOfColumn("CDS_EmailProcFrom", fromAddress);	
 
 		// Default request type for this process
 		if (R_RequestType_ID > 0)
