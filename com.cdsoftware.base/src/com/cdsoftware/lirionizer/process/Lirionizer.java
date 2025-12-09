@@ -30,17 +30,19 @@ import com.cdsoftware.lirionizer.base.CustomProcess;
 public class Lirionizer extends CustomProcess{
 	
 	private String p_jettyPath = "";
+	private String p_theme_prefix = "";
 	@Override
 	protected void prepare() {
-		for (ProcessInfoParameter para : getParameter()) {
-			String name = para.getParameterName();
-			if ("jettyPath".equals(name)) {
-				p_jettyPath = para.getParameterAsString();
-			} else {
-				MProcessPara.validateUnknownParameter(getProcessInfo().getAD_Process_ID(), para);
-			}			
-		}
-		
+	    for (ProcessInfoParameter para : getParameter()) {
+	        String name = para.getParameterName();
+	        if ("jettyPath".equals(name)) {
+	            p_jettyPath = para.getParameterAsString();
+	        } else if ("Prefix".equals(name)) {
+	            p_theme_prefix = para.getParameterAsString();
+	        } else {
+	            MProcessPara.validateUnknownParameter(getProcessInfo().getAD_Process_ID(), para);
+	        }
+	    }		
 	}
 
 	@Override
@@ -53,6 +55,13 @@ public class Lirionizer extends CustomProcess{
         String bmlaurusPath ="";
         String templatePath = "file://";
         String osName = System.getProperty("os.name").toLowerCase();
+        
+        String fileHtml        = p_theme_prefix + ".idempiere.html";
+        String fileJsp         = p_theme_prefix + ".idempiere.jsp";
+        String fileHomeTmpl    = p_theme_prefix + ".home.properties.template";
+        String fileZip         = p_theme_prefix + ".template.zip";
+
+        
         if (osName.contains("windows")) {
         	templatePath="file:///";
         }
@@ -98,11 +107,13 @@ public class Lirionizer extends CustomProcess{
         MAttachment att = process.getAttachment();
         MAttachmentEntry[] entries = att.getEntries();
         for (MAttachmentEntry entry : entries) {
-        	if(entry.getName().compareToIgnoreCase("idempiere.jsp")==0
-        			|| entry.getName().compareToIgnoreCase("idempiere.html")==0) {
+        	if (entry.getName().equalsIgnoreCase(fileHtml)
+        			 || entry.getName().equalsIgnoreCase(fileJsp)) {
         		File file = entry.getFile();
         		Path origen = Paths.get(file.getPath());
-        		Path destino = Paths.get(jettyPath+"/"+entry.getName());
+        		//Path destino = Paths.get(jettyPath+"/"+entry.getName());
+        		Path destino = Paths.get(jettyPath + "/" + entry.getName().replace(p_theme_prefix + ".", ""));
+
         		if(!Files.exists(origen))
         			throw new AdempiereException("Ruta de Origen no existe: "+origen);
         		if(!Files.exists(destino))
@@ -115,10 +126,12 @@ public class Lirionizer extends CustomProcess{
         		Path destino = Paths.get(bmlaurusPath+"/"+entry.getName());
         		Files.copy(origen, destino,StandardCopyOption.REPLACE_EXISTING);
         	}
-        	else if(entry.getName().compareToIgnoreCase("home.properties.template")==0) {
+        	//else if(entry.getName().compareToIgnoreCase("home.properties.template")==0) {
+        	else if (entry.getName().equalsIgnoreCase(fileHomeTmpl)) {
         		File file = entry.getFile();
         		Path origen = Paths.get(file.getPath());
-        		Path destino = Paths.get(idempiereHome+"/home.properties");
+        		Path destino = Paths.get(idempiereHome + "/home.properties");
+
         		Files.copy(origen, destino,StandardCopyOption.REPLACE_EXISTING);
         		//leo el archivo para cambiar ruta del template path
     	        try (FileInputStream propertiesFile = new FileInputStream(destino.toString())) {
@@ -139,14 +152,19 @@ public class Lirionizer extends CustomProcess{
     	            e.printStackTrace();
     	        }     
         	}
-        	else if(entry.getName().compareToIgnoreCase("lirionTemplate.zip")==0) {
+        	//else if(entry.getName().compareToIgnoreCase("lirionTemplate.zip")==0) {
+        	else if (entry.getName().equalsIgnoreCase(fileZip)) {
         		//descomprimir y mover carpeta
         		File file = entry.getFile();
         		Path origen = Paths.get(file.getPath());
-        		Path destino = Paths.get(idempiereHome+"/"+entry.getName());
+        		/*Path destino = Paths.get(idempiereHome+"/"+entry.getName());
         		
                 // Eliminar el directorio de destino si existe
-                File destinoDir = new File(idempiereHome.concat("/lirionTemplate/"));
+                File destinoDir = new File(idempiereHome.concat("/lirionTemplate/"));*/
+                
+                Path destino = Paths.get(idempiereHome + "/" + p_theme_prefix + ".template.zip");
+                File destinoDir = new File(idempiereHome + "/" + p_theme_prefix + "Template/");
+
                 if (destinoDir.exists()) {
                     eliminarDirectorio(destinoDir);
                     log.warning("Borrado Directorio Template Anterior");
