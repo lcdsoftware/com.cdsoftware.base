@@ -341,7 +341,7 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 			String sqlupd = "SELECT r_request_id "
 					 + "  FROM r_request "
 					 + " WHERE ad_client_id = ? "
-					 + "   AND CDS_EmailProcFrom = ? "
+					 //+ "   AND CDS_EmailProcFrom = ? "
 					 + "   AND summary LIKE ? ";
 				// Create the search patterns based on the new Summary format
 
@@ -351,8 +351,8 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 			{
 				pstmtupd = DB.prepareStatement (sqlupd, null);
 				pstmtupd.setInt(1, getAD_Client_ID());
-				pstmtupd.setString(2, fromAddress);
-				pstmtupd.setString(3, subjectPattern);
+				//pstmtupd.setString(2, fromAddress);
+				pstmtupd.setString(2, subjectPattern);
 				rsupd = pstmtupd.executeQuery ();
 				if (rsupd.next ())
 					request_upd = rsupd.getInt(1);
@@ -379,11 +379,13 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		// Subject and body as summary
 		StringBuilder mailSubject = new StringBuilder(emailContent.subject);
 		StringBuilder mailBody = new StringBuilder("\n").append(emailContent.getTextContent());
-		req.setSummary(mailSubject.toString().concat("\n").concat(mailBody.toString()));	
+		req.setSummary(mailBody.toString());	
 			
 		// Set new custom columns
-		req.set_ValueOfColumn("CDS_EmailProcMessageID", emailContent.messageID);
+		req.set_ValueOfColumn("CDS_EmailSubject", mailSubject.toString());
 		req.set_ValueOfColumn("CDS_EmailProcFrom", fromAddress);	
+		req.set_ValueOfColumn("CDS_EmailProcMessageID", emailContent.messageID);
+		
 
 		// Default request type for this process
 		if (R_RequestType_ID > 0)
