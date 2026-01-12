@@ -33,9 +33,10 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Store;
-
+import javax.mail.internet.InternetAddress;
 import org.adempiere.exceptions.AdempiereException;
 import org.compiere.model.MAttachment;
+import org.compiere.model.MAttachmentEntry;
 import org.compiere.model.MColumn;
 import org.compiere.model.MProcessPara;
 import org.compiere.model.MRequest;
@@ -159,7 +160,8 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		checkInputParameter (emailSrv);		
 		
-		EmailSrv.readEmailFolder(emailSrv, p_InboxFolder, p_NestInbox, this);
+		//EmailSrv.readEmailFolder(emailSrv, p_InboxFolder, p_NestInbox, this);
+		readEmailFolderOrdered(emailSrv, p_InboxFolder, p_NestInbox, this);
 		
 		StringBuilder msgreturn = new StringBuilder("processInBox - Total=").append(noProcessed) 
 				.append(" - Requests=").append(noRequest)
@@ -333,7 +335,32 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		while (cleanSubject.toLowerCase().startsWith("re: ")) {
 			cleanSubject = cleanSubject.substring(4).trim(); // Remove "Re: " and trim spaces
 			isReply = true;
-		}	
+		}
+		//Check if the CDS_EmailSubject already exist
+		sqldup = "SELECT 1 FROM R_Request "
+				 + "WHERE AD_Client_ID = ? "
+				 //+ "AND CDS_EmailProcMessageID = ? ";
+				 + "AND CDS_EmailSubject = ? ";
+		
+		pstmtdup = null;
+		rsdup = null;
+		try 
+		{
+			pstmtdup = DB.prepareStatement (sqldup, get_TrxName());
+			pstmtdup.setInt(1, getAD_Client_ID());
+			pstmtdup.setString(2, cleanSubject);
+			rsdup = pstmtdup.executeQuery ();
+			if (rsdup.next ())
+				isReply = true;
+				//retValuedup = rsdup.getInt(1);
+		} catch (SQLException e) 
+		{
+		}
+		finally
+		{
+			DB.close (rsdup,pstmtdup);
+			rsdup = null;pstmtdup = null;
+		}
 		
 		// Only search for an update if it's a reply
 		if (isReply) {
@@ -342,10 +369,10 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 					 + "  FROM r_request "
 					 + " WHERE ad_client_id = ? "
 					 //+ "   AND CDS_EmailProcFrom = ? "
-					 + "   AND summary LIKE ? ";
+					 + "   AND CDS_EmailSubject LIKE ? ";
 				// Create the search patterns based on the new Summary format
 
-				String subjectPattern = "%\n" + cleanSubject + "%"; // Match the cleaned subject
+				String subjectPattern = "%" + cleanSubject + "%"; // Match the cleaned subject
 				
 			try 
 			{
@@ -378,7 +405,14 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 
 		// Subject and body as summary
 		StringBuilder mailSubject = new StringBuilder(emailContent.subject);
-		StringBuilder mailBody = new StringBuilder("\n").append(emailContent.getTextContent());
+		//Check for html content
+		String emailContentString = emailContent.getTextContent();
+		if(emailContentString.length()==0) {
+			emailContentString = emailContent.htmlContentBuild.toString();
+			emailContentString = emailContentString.replaceAll("(?is)<head.*?>.*?</head>", "");
+			emailContentString = emailContentString.replaceAll("(?is)</?html>", "");
+		}			
+		StringBuilder mailBody = new StringBuilder("\n").append(emailContentString);
 		req.setSummary(mailBody.toString());	
 			
 		// Set new custom columns
@@ -409,6 +443,19 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 			+ "   AND ad_client_id = ?";
 		PreparedStatement pstmtu = null;
 		ResultSet rsu = null;
+		
+		// ... dentro de createRequest ...
+		String fromAddressRaw = emailContent.fromAddress.get(0); 
+		try {
+		    InternetAddress address = new InternetAddress(fromAddressRaw);
+		    fromAddress = address.getAddress();
+		} catch (Exception e) {
+		    // Si falla el parseo, intentamos una limpieza manual básica
+		    if (fromAddressRaw.contains("<") && fromAddressRaw.contains(">")) {
+		        fromAddress = fromAddressRaw.substring(fromAddressRaw.indexOf("<") + 1, fromAddressRaw.indexOf(">"));
+		    }
+		}
+		
 		try 
 		{
 			pstmtu = DB.prepareStatement (sqlu, null);
@@ -464,32 +511,64 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 		if (log.isLoggable(Level.INFO)) log.info("created request " + req.getR_Request_ID() + " from msg -> " + emailContent.subject);
 		
+		MAttachment attach = req.createAttachment();
+		
 		if("H".equals(p_HTMLAttachmentType)) {
 			String htmlContent = emailContent.getHtmlContent(true);
 			if (htmlContent != null){
-				MAttachment attach = req.createAttachment();
-				
+				//MAttachment attach = req.createAttachment();				
 				attach.addEntry(emailContent.subject + ".html", emailContent.getHtmlContent(true).getBytes(Charset.forName("UTF-8")));
 				attach.saveEx(trxName);
 			}
 		} else if("I".equals(p_HTMLAttachmentType)) {
 			ArrayList<BodyPart> imagesList = emailContent.getHTMLImageBodyParts();
 			if(imagesList != null) {
-				for(BodyPart image: imagesList) {
+				for (int i = 0; i < imagesList.size(); i++) {
+					BodyPart image = imagesList.get(i);
+		            String fileName = image.getFileName();
+		            // Si el nombre es nulo o repetido, lo hacemos único
+		            if (fileName == null || fileName.trim().isEmpty()) fileName = "image_" + i;
+		            
+		            // Validar si ya existe para evitar sobrescribir
+		            fileName = getUniqueFileName(attach, fileName, i);
+		            
+		            attach.addEntry(fileName, EmailSrv.getBinaryData(image));
+				}
+				/*for(BodyPart image: imagesList) {
 					MAttachment attach = req.createAttachment();
 					
 					attach.addEntry(image.getFileName(), EmailSrv.getBinaryData(image));
 					attach.saveEx(trxName);
-				}
+				}*/
 			}
 		}
-				
-		for (BodyPart attachFile : emailContent.lsAttachPart){
+
+		for (int j = 0; j < emailContent.lsAttachPart.size(); j++) {
+		    BodyPart attachFile = emailContent.lsAttachPart.get(j);
+		    String fileName = getUniqueFileName(attach, attachFile.getFileName(), j);
+		    attach.addEntry(fileName, EmailSrv.getBinaryData(attachFile));
+		}
+		attach.saveEx(trxName);
+		
+		/*for (BodyPart attachFile : emailContent.lsAttachPart){
 			MAttachment attach = req.createAttachment();
 			attach.addEntry(attachFile.getFileName(), EmailSrv.getBinaryData(attachFile));
 			attach.saveEx(trxName);
-		}
+		}*/
 		
+	}
+	
+	private String getUniqueFileName(MAttachment attach, String fileName, int index) {
+	    MAttachmentEntry[] entries = attach.getEntries();
+	    if (entries == null || entries.length == 0) return fileName;
+
+	    for (MAttachmentEntry entry : entries) {
+	        if (entry.getName().equals(fileName)) {
+	            // Si existe, le concatenamos el índice o un timestamp
+	            return index + "_" + fileName;
+	        }
+	    }
+	    return fileName;
 	}
 	
 	protected void updateRequest(int request_upd, EmailContent emailContent, String trxName) throws MessagingException, SQLException {
@@ -514,4 +593,84 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		return lsFolderProcess;
 	}
 
+	public boolean readEmailFolderOrdered(EmailSrv emailSrv, String folderName, Boolean isNestInbox, ProcessEmailHandle processEmailHandle) {
+	    Message[] lsMsg = null;
+	    Folder readerFolder = null;
+	    Store mailStore = null;
+	    ClassLoader tcl = null;
+	    try {
+	        tcl = Thread.currentThread().getContextClassLoader();
+	        try {
+	            Thread.currentThread().setContextClassLoader(javax.mail.Session.class.getClassLoader());
+	            mailStore = emailSrv.getMailStore();
+	            readerFolder = EmailSrv.getFolder(mailStore, folderName, isNestInbox, false);
+	            
+	            // 1. Obtener mensajes
+	            lsMsg = readerFolder.getMessages();
+
+	            // 2. ORDENAR CRONOLÓGICAMENTE (Más antiguo primero)
+	            java.util.Arrays.sort(lsMsg, (m1, m2) -> {
+	                try {
+	                    return m1.getSentDate().compareTo(m2.getSentDate());
+	                } catch (MessagingException e) {
+	                    return 0;
+	                }
+	            });
+
+	        } catch (Exception e) {
+	            log.log(Level.SEVERE, "Error al inicializar la lectura de correos", e);
+	            emailSrv.clearResource();
+	            throw new AdempiereException(e.getMessage());
+	        }
+
+	        int numOfTry = 0;
+	        int numeOfContinueErrorEmail = 0;
+
+	        for (int i = 0; i < lsMsg.length; ) {
+	            EmailContent processEmail = null;
+	            Message readerMsg = lsMsg[i];
+	            try {
+	                if (!mailStore.isConnected()) mailStore.connect();
+	                if (!readerFolder.isOpen()) readerFolder.open(Folder.READ_WRITE);
+	                
+	                // Reabrir carpetas extras (Request y Error)
+	                if (processEmailHandle != null && processEmailHandle.getListFolder() != null) {
+	                    for (Folder exFolder : processEmailHandle.getListFolder()) {
+	                        if (!exFolder.isOpen()) exFolder.open(Folder.READ_WRITE);
+	                    }
+	                }
+
+	                // 3. Procesar mensaje (Llamada al motor estándar de EmailSrv)
+	                processEmail = EmailSrv.processMessage(readerMsg, processEmailHandle, mailStore, readerFolder);
+	                i++;
+	                numOfTry = 0;
+	                numeOfContinueErrorEmail = 0;
+	            } catch (Exception e) {
+	                // Lógica de reintento ante desconexión (Copiada del original)
+	                if ((e instanceof javax.mail.FolderClosedException || e instanceof javax.mail.StoreClosedException || e instanceof java.io.IOException) && numOfTry < 3) {
+	                    log.warning("Red desconectada, reintentando leer email...");
+	                    try { Thread.sleep(5000); numOfTry++; } catch (InterruptedException e1) {}
+	                } else {
+	                    numeOfContinueErrorEmail++;
+	                    i++;
+	                    try {
+							processEmailHandle.processEmailError(processEmail, readerMsg, mailStore, readerFolder);
+						} catch (MessagingException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+	                    
+	                    if (numeOfContinueErrorEmail > 5) {
+	                        emailSrv.clearResource();
+	                        throw new AdempiereException("Se detectaron más de 5 errores continuos procesando emails");
+	                    }
+	                }
+	            }
+	        }
+	        emailSrv.clearResource();
+	    } finally {
+	        Thread.currentThread().setContextClassLoader(tcl);
+	    }
+	    return true;
+	}
 }	//	RequestEMailProcessor
