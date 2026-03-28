@@ -18,20 +18,14 @@ package com.cdsoftware.lirionizer.process;
  *****************************************************************************/
 
 import java.math.BigDecimal;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.logging.Level;
 
 import org.adempiere.exceptions.DBException;
-import org.compiere.model.MAging;
 import org.compiere.model.MProcessPara;
-import org.compiere.model.MRole;
 import org.compiere.process.ProcessInfoParameter;
 import org.compiere.process.SvrProcess;
 import org.compiere.util.DB;
-import org.compiere.util.TimeUtil;
 
 /**
  *	Unallocated Payments To Date Report
@@ -83,44 +77,70 @@ public class UnallocatedPayments extends SvrProcess
 
 		StringBuilder sql = new StringBuilder();
 		
-		//Insert Clause
-		sql.append("INSERT INTO T_CDS_C_Payment ");
-		
-		sql.append("SELECT p.*,coalesce(al.amount,0) as allocatedamttodate,p.payamt-coalesce(al.amount,0) openamttodate,"
-				+ this.getAD_PInstance_ID()+" "
-				+ "FROM c_payment_v p "
-				+ "LEFT JOIN (SELECT sum(al.amount) as amount,al.c_payment_id "
-				+ "FROM C_AllocationLine al "
-				+ "INNER JOIN C_AllocationHdr a ON (al.C_AllocationHdr_ID=a.C_AllocationHdr_ID) "
-				+ "WHERE a.IsActive='Y' and al.c_payment_id is not null ");
-		if (p_DateAcct != null)
-		{
-			sql.append("AND a.DateTrx BETWEEN '"+p_DateAcct+"' AND '"+p_DateAcctTo+"' ");
+		// Insert Clause
+		sql.append("INSERT INTO T_CDS_C_Payment (");
+		sql.append("c_payment_id, ad_client_id, ad_org_id, isactive, created, createdby, updated, updatedby, ");
+		sql.append("documentno, datetrx, isreceipt, c_doctype_id, trxtype, c_bankaccount_id, c_bpartner_id, ");
+		sql.append("c_invoice_id, c_bp_bankaccount_id, c_paymentbatch_id, tendertype, creditcardtype, ");
+		sql.append("creditcardnumber, creditcardvv, creditcardexpmm, creditcardexpyy, micr, routingno, ");
+		sql.append("accountno, checkno, a_name, a_street, a_city, a_state, a_zip, a_ident_dl, a_ident_ssn, ");
+		sql.append("a_email, voiceauthcode, orig_trxid, ponum, c_currency_id, c_conversiontype_id, ");
+		sql.append("payamt, discountamt, writeoffamt, taxamt, overunderamt, multiplierap, isoverunderpayment, ");
+		sql.append("isapproved, r_pnref, r_result, r_respmsg, r_authcode, r_avsaddr, r_avszip, r_info, ");
+		sql.append("processing, oprocessing, docstatus, docaction, isprepayment, c_charge_id, isreconciled, ");
+		sql.append("isallocated, isonline, processed, posted, c_campaign_id, c_project_id, c_activity_id, ");
+		sql.append("ad_orgtrx_id, chargeamt, c_order_id, dateacct, description, isselfservice, processedon, ");
+		sql.append("currencyrate, convertedamt, isoverridecurrencyrate, ");
+		sql.append("allocatedamttodate, openamttodate, ad_pinstance_id) ");
+
+		sql.append("SELECT ");
+		sql.append("p.c_payment_id, p.ad_client_id, p.ad_org_id, p.isactive, p.created, p.createdby, p.updated, p.updatedby, ");
+		sql.append("p.documentno, p.datetrx, p.isreceipt, p.c_doctype_id, p.trxtype, p.c_bankaccount_id, p.c_bpartner_id, ");
+		sql.append("p.c_invoice_id, p.c_bp_bankaccount_id, p.c_paymentbatch_id, p.tendertype, p.creditcardtype, ");
+		sql.append("p.creditcardnumber, p.creditcardvv, p.creditcardexpmm, p.creditcardexpyy, p.micr, p.routingno, ");
+		sql.append("p.accountno, p.checkno, p.a_name, p.a_street, p.a_city, p.a_state, p.a_zip, p.a_ident_dl, p.a_ident_ssn, ");
+		sql.append("p.a_email, p.voiceauthcode, p.orig_trxid, p.ponum, p.c_currency_id, p.c_conversiontype_id, ");
+		sql.append("p.payamt, p.discountamt, p.writeoffamt, p.taxamt, p.overunderamt, p.multiplierap, p.isoverunderpayment, ");
+		sql.append("p.isapproved, p.r_pnref, p.r_result, p.r_respmsg, p.r_authcode, p.r_avsaddr, p.r_avszip, p.r_info, ");
+		sql.append("p.processing, p.oprocessing, p.docstatus, p.docaction, p.isprepayment, p.c_charge_id, p.isreconciled, ");
+		sql.append("p.isallocated, p.isonline, p.processed, p.posted, p.c_campaign_id, p.c_project_id, p.c_activity_id, ");
+		sql.append("p.ad_orgtrx_id, p.chargeamt, p.c_order_id, p.dateacct, p.description, p.isselfservice, p.processedon, ");
+		sql.append("p.currencyrate, p.convertedamt, p.isoverridecurrencyrate, ");
+		sql.append("COALESCE(al.amount, 0) AS allocatedamttodate, ");
+		sql.append("p.payamt - COALESCE(al.amount, 0) AS openamttodate, ");
+		sql.append(this.getAD_PInstance_ID()).append(" AS ad_pinstance_id ");
+
+		sql.append("FROM c_payment_v p ");
+		sql.append("LEFT JOIN (");
+		sql.append("  SELECT SUM(al.amount) AS amount, al.c_payment_id ");
+		sql.append("  FROM C_AllocationLine al ");
+		sql.append("  INNER JOIN C_AllocationHdr a ON (al.C_AllocationHdr_ID = a.C_AllocationHdr_ID) ");
+		sql.append("  WHERE a.IsActive = 'Y' AND al.c_payment_id IS NOT NULL ");
+
+		if (p_DateAcct != null) {
+		    sql.append("  AND a.DateAcct BETWEEN '").append(p_DateAcct).append("' AND '").append(p_DateAcctTo).append("' ");
 		}
-		sql.append("GROUP BY al.c_payment_id "
-				+ "ORDER BY al.C_Payment_ID) al on al.c_payment_id = p.c_payment_id "
-				+ "WHERE p.AD_Client_ID = "+this.getAD_Client_ID());
-		if (p_C_BPartner_ID > 0)
-		{
-			sql.append(" AND p.C_BPartner_ID=").append(p_C_BPartner_ID);
+
+		sql.append("  GROUP BY al.c_payment_id ");
+		sql.append(") al ON al.c_payment_id = p.c_payment_id ");
+		sql.append("WHERE p.AD_Client_ID = ").append(this.getAD_Client_ID());
+
+		if (p_C_BPartner_ID > 0) {
+		    sql.append(" AND p.C_BPartner_ID = ").append(p_C_BPartner_ID);
 		}
-		if (p_IsReceipt.equals("Y"))
-		{
-			sql.append(" AND p.IsReceipt='Y' ");
+		if (p_IsReceipt.equals("Y")) {
+		    sql.append(" AND p.IsReceipt = 'Y' ");
 		} else if (p_IsReceipt.equals("N")) {
-			sql.append(" AND p.IsReceipt='N' ");
+		    sql.append(" AND p.IsReceipt = 'N' ");
 		}
-		if (p_DateAcct != null)
-		{
-			sql.append(" AND p.DateTrx BETWEEN '"+p_DateAcct+"' AND '"+p_DateAcctTo+"' ");
+		if (p_DateAcct != null) {
+		    sql.append(" AND p.DateAcct BETWEEN '").append(p_DateAcct).append("' AND '").append(p_DateAcctTo).append("' ");
 		}
-		
-		sql.append("ORDER BY p.DateTrx,p.documentno");
-		
-		//
-		try
-		{
-			DB.executeUpdateEx(sql.toString(),get_TrxName());
+
+		sql.append(" ORDER BY p.DateAcct, p.documentno");
+
+		try {
+		    DB.executeUpdateEx(sql.toString(), get_TrxName());
 		}
 		catch (DBException e1) {
 			log.warning("Problem = " + e1.getLocalizedMessage());
