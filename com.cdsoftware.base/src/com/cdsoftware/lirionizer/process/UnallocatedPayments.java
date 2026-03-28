@@ -90,7 +90,7 @@ public class UnallocatedPayments extends SvrProcess
 		sql.append("processing, oprocessing, docstatus, docaction, isprepayment, c_charge_id, isreconciled, ");
 		sql.append("isallocated, isonline, processed, posted, c_campaign_id, c_project_id, c_activity_id, ");
 		sql.append("ad_orgtrx_id, chargeamt, c_order_id, dateacct, description, isselfservice, processedon, ");
-		sql.append("reversal_id, currencyrate, convertedamt, isoverridecurrencyrate, ");
+		sql.append("currencyrate, convertedamt, isoverridecurrencyrate, ");
 		sql.append("allocatedamttodate, openamttodate, ad_pinstance_id) ");
 
 		sql.append("SELECT ");
@@ -105,7 +105,7 @@ public class UnallocatedPayments extends SvrProcess
 		sql.append("p.processing, p.oprocessing, p.docstatus, p.docaction, p.isprepayment, p.c_charge_id, p.isreconciled, ");
 		sql.append("p.isallocated, p.isonline, p.processed, p.posted, p.c_campaign_id, p.c_project_id, p.c_activity_id, ");
 		sql.append("p.ad_orgtrx_id, p.chargeamt, p.c_order_id, p.dateacct, p.description, p.isselfservice, p.processedon, ");
-		sql.append("p.reversal_id, p.currencyrate, p.convertedamt, p.isoverridecurrencyrate, ");
+		sql.append("p.currencyrate, p.convertedamt, p.isoverridecurrencyrate, ");
 		sql.append("COALESCE(al.amount, 0) AS allocatedamttodate, ");
 		sql.append("p.payamt - COALESCE(al.amount, 0) AS openamttodate, ");
 		sql.append(this.getAD_PInstance_ID()).append(" AS ad_pinstance_id ");
@@ -137,7 +137,7 @@ public class UnallocatedPayments extends SvrProcess
 		    sql.append(" AND p.DateAcct BETWEEN '").append(p_DateAcct).append("' AND '").append(p_DateAcctTo).append("' ");
 		}
 
-		sql.append("ORDER BY p.DateAcct, p.documentno");
+		sql.append(" ORDER BY p.DateAcct, p.documentno");
 
 		try {
 		    DB.executeUpdateEx(sql.toString(), get_TrxName());
