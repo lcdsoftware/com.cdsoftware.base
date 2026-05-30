@@ -1,3 +1,28 @@
+/**********************************************************************
+ * This file is part of iDempiere ERP Open Source                      *
+ * http://www.idempiere.org                                            *
+ *                                                                     *
+ * Copyright (C) Contributors                                          *
+ *                                                                     *
+ * This program is free software; you can redistribute it and/or       *
+ * modify it under the terms of the GNU General Public License         *
+ * as published by the Free Software Foundation; either version 2      *
+ * of the License, or (at your option) any later version.              *
+ *                                                                     *
+ * This program is distributed in the hope that it will be useful,     *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
+ * GNU General Public License for more details.                        *
+ *                                                                     *
+ * You should have received a copy of the GNU General Public License   *
+ * along with this program; if not, write to the Free Software         *
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,          *
+ * MA 02110-1301, USA.                                                 *
+ *                                                                     *
+ * Contributors:                                                       *
+ * - Casa del Software                                                 *
+ * - Angel Lara                                                        *
+ **********************************************************************/
 package com.cdsoftware.lirionizer.process;
 
 import java.sql.PreparedStatement;
@@ -9,12 +34,23 @@ import org.compiere.process.ProcessInfoParameter;
 import org.compiere.process.SvrProcess;
 import org.compiere.util.DB;
 
+/**
+ * Server process that refreshes a PostgreSQL materialized view based on the AD_Table_ID provided.
+ * It identifies the physical table/view name from AD_Table and performs the REFRESH MATERIALIZED VIEW operation.
+ */
 @org.adempiere.base.annotation.Process
 public class RefreshMaterializedView extends SvrProcess {
 
     private int p_AD_Table_ID = 0;
     private boolean p_IsConcurrent = false;
 
+    /**
+     * Reads process parameters.
+     *
+     * Parameters:
+     * - AD_Table_ID: ID of the AD_Table representing the materialized view.
+     * - IsConcurrent: Flag to indicate if the refresh should be executed concurrently.
+     */
     @Override
     protected void prepare() {
         ProcessInfoParameter[] para = getParameter();
@@ -32,6 +68,13 @@ public class RefreshMaterializedView extends SvrProcess {
         }
     }
 
+    /**
+     * Validates parameters, looks up the active table name, performs security and existence checks on the materialized view,
+     * and executes the REFRESH MATERIALIZED VIEW command.
+     *
+     * @return Success message containing the view name, duration, and mode (Concurrent or Exclusive).
+     * @throws Exception if AD_Table_ID is invalid, view name is not found, SQL injection is suspected, view does not exist, or concurrent refresh lacks a unique index.
+     */
     @Override
     protected String doIt() throws Exception {
         if (p_AD_Table_ID <= 0) {
