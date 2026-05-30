@@ -15,6 +15,9 @@ package com.cdsoftware.lirionizer.process;
  * For the text or an alternative of this public license, you may reach us    *
  * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA        *
  * or via info@compiere.org or http://www.compiere.org/license.html           *
+ *                                                                            *
+ * Contributors:                                                              *
+ * - Angel Lara                                                               *
  *****************************************************************************/
 
 import java.math.BigDecimal;
@@ -28,9 +31,10 @@ import org.compiere.process.SvrProcess;
 import org.compiere.util.DB;
 
 /**
- *	Unallocated Payments To Date Report
- *	Based on C_Payment_V.
- *  @author Angel Lara
+ * Server process that extracts unallocated payment data into a temporary reporting table (T_CDS_C_Payment).
+ * It calculates the allocated and open amounts up to a specified accounting date.
+ *
+ * @author Angel Lara
  */
 @org.adempiere.base.annotation.Process
 public class UnallocatedPayments extends SvrProcess
@@ -42,7 +46,12 @@ public class UnallocatedPayments extends SvrProcess
 	private int			p_C_BPartner_ID = 0;
 	
 	/**
-	 *  Prepare - e.g., get Parameters.
+	 * Reads process parameters.
+	 *
+	 * Parameters:
+	 * - DateAcct: Accounting date range (from and to) for the payments and allocations.
+	 * - IsReceipt: Filters by receipt (Y) or payment (N).
+	 * - C_BPartner_ID: Optional business partner filter.
 	 */
 	protected void prepare()
 	{
@@ -66,9 +75,10 @@ public class UnallocatedPayments extends SvrProcess
 	}	//	prepare
 
 	/**
-	 * 	DoIt
-	 *	@return Message
-	 *	@throws Exception
+	 * Executes a SQL INSERT statement to populate the T_CDS_C_Payment table with payment data
+	 * and calculated open amounts based on allocations within the specified date range.
+	 *
+	 * @return Empty string upon successful execution.
 	 */
 	protected String doIt()
 	{

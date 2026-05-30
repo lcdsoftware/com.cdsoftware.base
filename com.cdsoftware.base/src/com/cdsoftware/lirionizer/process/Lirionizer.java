@@ -1,3 +1,28 @@
+/**********************************************************************
+ * This file is part of iDempiere ERP Open Source                      *
+ * http://www.idempiere.org                                            *
+ *                                                                     *
+ * Copyright (C) Contributors                                          *
+ *                                                                     *
+ * This program is free software; you can redistribute it and/or       *
+ * modify it under the terms of the GNU General Public License         *
+ * as published by the Free Software Foundation; either version 2      *
+ * of the License, or (at your option) any later version.              *
+ *                                                                     *
+ * This program is distributed in the hope that it will be useful,     *
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of      *
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the        *
+ * GNU General Public License for more details.                        *
+ *                                                                     *
+ * You should have received a copy of the GNU General Public License   *
+ * along with this program; if not, write to the Free Software         *
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,          *
+ * MA 02110-1301, USA.                                                 *
+ *                                                                     *
+ * Contributors:                                                       *
+ * - Casa del Software                                                 *
+ * - Angel Lara                                                        *
+ **********************************************************************/
 package com.cdsoftware.lirionizer.process;
 
 import java.io.BufferedInputStream;
@@ -26,11 +51,23 @@ import org.compiere.util.Ini;
 
 import com.cdsoftware.lirionizer.base.CustomProcess;
 
+/**
+ * Server process that extracts and deploys theme template files to the iDempiere and Jetty directories.
+ * It identifies the server configuration and copies HTML, JSP, and ZIP templates to customize the web interface.
+ */
 @org.adempiere.base.annotation.Process
 public class Lirionizer extends CustomProcess{
 	
 	private String p_jettyPath = "";
 	private String p_theme_prefix = "";
+
+	/**
+	 * Reads process parameters.
+	 *
+	 * Parameters:
+	 * - jettyPath: Optional custom path for the Jetty server directory.
+	 * - Prefix: Prefix used to identify the theme files (e.g., prefix.idempiere.html).
+	 */
 	@Override
 	protected void prepare() {
 	    for (ProcessInfoParameter para : getParameter()) {
@@ -45,6 +82,13 @@ public class Lirionizer extends CustomProcess{
 	    }		
 	}
 
+	/**
+	 * Locates the iDempiere home directory, determines the Jetty path based on the current build,
+	 * copies attached theme files to their respective destinations, modifies home.properties, and extracts template ZIP files.
+	 *
+	 * @return Success message indicating process completion.
+	 * @throws Exception if source or destination paths are invalid, or if file operations fail.
+	 */
 	@Override
 	protected String doIt() throws Exception {
         String idempiereHome = Ini.findAdempiereHome();
@@ -220,7 +264,11 @@ public class Lirionizer extends CustomProcess{
         return "Proceso Finalizado Exitosamente";
 	}
 	
-    // Método para eliminar un directorio de manera recursiva
+    /**
+     * Recursively deletes a directory and all its contents.
+     *
+     * @param directorio the directory file to be deleted.
+     */
     private static void eliminarDirectorio(File directorio) {
         File[] archivos = directorio.listFiles();
         if (archivos != null) {

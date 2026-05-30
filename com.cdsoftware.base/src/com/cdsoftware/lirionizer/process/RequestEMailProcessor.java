@@ -13,6 +13,9 @@
  * For the text or an alternative of this public license, you may reach us    *
  * ComPiere, Inc., 2620 Augustine Dr. #245, Santa Clara, CA 95054, USA        *
  * or via info@compiere.org or http://www.compiere.org/license.html           *
+ *                                                                            *
+ * Contributors:                                                              *
+ * - Angel Lara                                                               *
  *****************************************************************************/
 package com.cdsoftware.lirionizer.process;
 
@@ -53,12 +56,13 @@ import org.compiere.util.Trx;
 import com.cdsoftware.lirionizer.base.CustomProcess;
 
 /**
- *	Request Email Processor
- *	
- *  @author Carlos Ruiz based on initial work by Jorg Janke - sponsored by DigitalArmour
- *  @version $Id: RequestEMailProcessor.java,v 1.2 2006/10/23 06:01:20 cruiz Exp $
+ * Server process that reads emails from an IMAP server to create or update request records (R_Request).
+ * It identifies the user by email address, handles attachments, and appends replies to existing requests.
+ *
+ * @author Carlos Ruiz based on initial work by Jorg Janke - sponsored by DigitalArmour
+ * @version $Id: RequestEMailProcessor.java,v 1.2 2006/10/23 06:01:20 cruiz Exp $
  *  
- *  IMAPHost format: {imap|imaps}://[IMAPHostURL]:[Port] example: imaps://imap.gmail.com:993
+ * IMAPHost format: {imap|imaps}://[IMAPHostURL]:[Port] example: imaps://imap.gmail.com:993
  */
 
 @org.adempiere.base.annotation.Process
@@ -97,8 +101,26 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	protected Folder errorFolder;
 	protected Folder requestFolder;
 	protected List<Folder> lsFolderProcess = new ArrayList<Folder>();
+
 	/**
-	 *  Prepare - e.g., get Parameters.
+	 * Reads process parameters.
+	 *
+	 * Parameters:
+	 * - p_IMAPHost: IMAP server host URL.
+	 * - p_IMAPUser: IMAP server username.
+	 * - p_IMAPPwd: IMAP server password.
+	 * - p_RequestFolder: Folder to move processed request emails to.
+	 * - p_InboxFolder: Source folder to read emails from.
+	 * - p_ErrorFolder: Folder to move failed emails to.
+	 * - C_BPartner_ID: Default business partner ID.
+	 * - AD_User_ID: Default user ID.
+	 * - AD_Role_ID: Default role ID.
+	 * - SalesRep_ID: Default sales representative ID.
+	 * - R_RequestType_ID: Default request type ID.
+	 * - p_DefaultPriority: Default priority assigned to new requests.
+	 * - p_DefaultConfidentiality: Default confidentiality level.
+	 * - p_NestInbox: Flag to indicate if nested inbox folders should be read.
+	 * - HTMLAttachmentType: Determines how HTML and inline images are attached (H for HTML file, I for images).
 	 */
 	protected void prepare()
 	{
@@ -148,9 +170,10 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	}	//	prepare
 
 	/**
-	 *  Perform process.
-	 *  @return Message (clear text)
-	 *  @throws Exception if not successful
+	 * Initializes the email server connection, verifies parameters, and processes the inbox folder.
+	 *
+	 * @return Summary message with total emails processed, requests created/updated, and errors.
+	 * @throws Exception if email connection or processing fails.
 	 */
 	protected String doIt() throws Exception
 	{
@@ -169,6 +192,9 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		return msgreturn.toString();
 	}	//	doIt
 	
+	/**
+	 * Parses the IMAP host parameter to extract the protocol, determine if SSL is required, and extract the port number.
+	 */
 	protected void parseParameter() {
 		// === check for ssl input parameter ===
 		int imapProtocolIndex = p_IMAPHost.lastIndexOf("://");
@@ -203,6 +229,13 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		}
 	}
 	
+	/**
+	 * Validates input parameters and initializes the request and error email folders.
+	 * 
+	 * @param emailSrv the initialized EmailSrv instance.
+	 * @throws MessagingException if folder access fails.
+	 * @throws Exception for other general errors.
+	 */
 	protected void checkInputParameter (EmailSrv emailSrv) throws MessagingException, Exception {
 		if (log.isLoggable(Level.INFO)) log.info("doIt - IMAPHost=" + p_IMAPHost +
 					   " IMAPPort=" + p_IMAPPort  +
@@ -277,10 +310,11 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	
 	
 	/**
-	 * 	Create request
-	 * @param emailContent
-	 * @param trxName
-	 * @throws Exception
+	 * Creates a new request from an email message. Checks for duplicates and handles email replies to update existing requests.
+	 * 
+	 * @param emailContent The parsed email content and header information.
+	 * @param trxName The database transaction name.
+	 * @throws Exception if database access or saving fails.
 	 */
 	protected void createRequest(EmailContent emailContent, String trxName) throws Exception {
 		// Assign from variable
@@ -558,6 +592,14 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		
 	}
 	
+	/**
+	 * Ensures the attachment filename is unique within the request's current attachments.
+	 *
+	 * @param attach The MAttachment record for the request.
+	 * @param fileName The original filename.
+	 * @param index A fallback index to ensure uniqueness.
+	 * @return A unique filename.
+	 */
 	private String getUniqueFileName(MAttachment attach, String fileName, int index) {
 	    MAttachmentEntry[] entries = attach.getEntries();
 	    if (entries == null || entries.length == 0) return fileName;
@@ -571,6 +613,15 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 	    return fileName;
 	}
 	
+	/**
+	 * Updates an existing request with the content of a new email reply.
+	 *
+	 * @param request_upd The ID of the existing request.
+	 * @param emailContent The parsed email content to append.
+	 * @param trxName The database transaction name.
+	 * @throws MessagingException if email extraction fails.
+	 * @throws SQLException if database updates fail.
+	 */
 	protected void updateRequest(int request_upd, EmailContent emailContent, String trxName) throws MessagingException, SQLException {
 		MRequest requp = new MRequest(getCtx(), request_upd, trxName);
 		// Body as result
@@ -593,6 +644,15 @@ public class RequestEMailProcessor extends CustomProcess implements ProcessEmail
 		return lsFolderProcess;
 	}
 
+	/**
+	 * Reads and processes emails from the specified folder in chronological order (oldest first).
+	 *
+	 * @param emailSrv The EmailSrv instance connected to the IMAP server.
+	 * @param folderName The name of the folder to read.
+	 * @param isNestInbox Whether to read nested folders.
+	 * @param processEmailHandle The handler for processing individual emails.
+	 * @return true if processing finishes.
+	 */
 	public boolean readEmailFolderOrdered(EmailSrv emailSrv, String folderName, Boolean isNestInbox, ProcessEmailHandle processEmailHandle) {
 	    Message[] lsMsg = null;
 	    Folder readerFolder = null;
