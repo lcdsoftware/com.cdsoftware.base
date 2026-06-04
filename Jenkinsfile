@@ -11,20 +11,30 @@ pipeline {
             agent any
             steps {
                 script {
-                    def jobDescription = """
-                    <b>Plugin:</b> ${env.PLUGIN_NAME}<br/>
-                    <b>iDempiere:</b> ${env.IDEMPIERE_VERSION}<br/>
-                    <b>Branch:</b> ${env.BRANCH_NAME ?: 'N/A'}<br/>
-                    <b>Job:</b> ${env.JOB_NAME}<br/>
-                    """
+                    def branchJob = currentBuild.rawBuild.getParent()
+                    def multibranchJob = branchJob.getParent()
 
-                    currentBuild.description = "${env.PLUGIN_NAME} - Build #${env.BUILD_NUMBER}"
+                    def branchDescription = """
+        Plugin: ${env.PLUGIN_NAME}
+        iDempiere: ${env.IDEMPIERE_VERSION}
+        Branch: ${env.BRANCH_NAME}
+        Job: ${env.JOB_NAME}
+        """
 
-                    currentBuild.rawBuild
-                        .getParent()
-                        .setDescription(jobDescription)
+                    def mainDescription = """
+        Plugin: ${env.PLUGIN_NAME}
+        iDempiere: ${env.IDEMPIERE_VERSION}
+        Repositorio: Bitbucket
+        Última rama ejecutada: ${env.BRANCH_NAME}
+        Último build: #${env.BUILD_NUMBER}
+        """
 
-                    echo "Descripción del build y del proyecto actualizada correctamente."
+                    branchJob.setDescription(branchDescription)
+                    multibranchJob.setDescription(mainDescription)
+
+                    currentBuild.description = "${env.PLUGIN_NAME}-${env.IDEMPIERE_VERSION}.${env.BUILD_NUMBER}"
+
+                    echo "Descripción del build, rama y multibranch actualizadas."
                 }
             }
         }
