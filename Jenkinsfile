@@ -15,19 +15,19 @@ pipeline {
                     def multibranchJob = branchJob.getParent()
 
                     def branchDescription = """
-        Plugin: ${env.PLUGIN_NAME}
-        iDempiere: ${env.IDEMPIERE_VERSION}
-        Branch: ${env.BRANCH_NAME}
-        Job: ${env.JOB_NAME}
+                    <b>Plugin:</b> ${env.PLUGIN_NAME}<br/>
+                    <b>iDempiere:</b> ${env.IDEMPIERE_VERSION}<br/>
+                    <b>Branch:</b> ${env.BRANCH_NAME ?: 'N/A'}<br/>
+                    <b>Job:</b> ${env.JOB_NAME}<br/>
         """
 
                     def mainDescription = """
-        Plugin: ${env.PLUGIN_NAME}
-        iDempiere: ${env.IDEMPIERE_VERSION}
-        Repositorio: Bitbucket
-        Última rama ejecutada: ${env.BRANCH_NAME}
-        Último build: #${env.BUILD_NUMBER}
-        """
+                    <b>Plugin:</b> ${env.PLUGIN_NAME}<br/>
+                    <b>iDempiere:</b> ${env.IDEMPIERE_VERSION}<br/>
+                    <b>Repositorio:</b> Bitbucket<br/>
+                    <b>Última rama ejecutada:</b> ${env.BRANCH_NAME}<br/>
+                    <b>Último build:</b> #${env.BUILD_NUMBER}<br/>
+                    """
 
                     branchJob.setDescription(branchDescription)
                     multibranchJob.setDescription(mainDescription)
