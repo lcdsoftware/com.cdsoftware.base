@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lirion — Sistema en Mantenimiento</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #f0f0f5;
+      --surface:   #ffffff;
+      --border:    rgba(90,84,144,0.15);
+      --accent:    #5a5490;
+      --accent2:   #5a9e2f;
+      --text:      #2d2b50;
+      --muted:     #8886aa;
+      --danger:    #e05a00;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── BACKGROUND GRID ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(90,84,144,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90,84,144,0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* ── GLOW BLOBS ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      opacity: 0.12;
+    }
+    .blob-1 { width: 500px; height: 500px; background: var(--accent);  top: -150px; left: -150px; animation: drift 12s ease-in-out infinite alternate; }
+    .blob-2 { width: 400px; height: 400px; background: var(--accent2); bottom: -100px; right: -100px; animation: drift 15s ease-in-out infinite alternate-reverse; }
+
+    @keyframes drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(40px, 30px) scale(1.06); }
+    }
+
+    /* ── CARD ── */
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 56px 52px 48px;
+      max-width: 580px;
+      width: calc(100% - 40px);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 0 1px rgba(90,84,144,0.1), 0 32px 80px rgba(90,84,144,0.12);
+      animation: rise 0.8s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* corner accent lines */
+    .card::before,
+    .card::after {
+      content: '';
+      position: absolute;
+      border-color: var(--accent);
+      border-style: solid;
+      width: 20px; height: 20px;
+    }
+    .card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 20px 0 0 0; }
+    .card::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 20px 0; }
+
+    /* ── STATUS BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--danger);
+      background: rgba(249,115,22,0.1);
+      border: 1px solid rgba(249,115,22,0.25);
+      border-radius: 100px;
+      padding: 5px 14px;
+      margin-bottom: 28px;
+    }
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--danger);
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.2; }
+    }
+
+    /* ── TITLE ── */
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(32px, 6vw, 46px);
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #2d2b50 0%, #5a5490 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    h1 em {
+      font-style: italic;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 36px;
+      line-height: 1.7;
+    }
+
+    /* ── DIVIDER ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 32px 0;
+    }
+
+    /* ── PROGRESS ── */
+    .progress-wrap {
+      margin-bottom: 28px;
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .progress-bar {
+      height: 4px;
+      background: rgba(90,84,144,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      width: 0%;
+      animation: fill 2.5s cubic-bezier(0.4,0,0.2,1) 0.4s forwards;
+    }
+    @keyframes fill {
+      to { width: 65%; }
+    }
+
+    /* ── META INFO ── */
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .meta-item {
+      background: rgba(90,84,144,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .meta-label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .meta-value {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .meta-value.accent { color: var(--accent); }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: 36px;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .footer::before {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .footer::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── COUNTDOWN ── */
+    #countdown {
+      font-size: 22px;
+      font-family: 'DM Mono', monospace;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="card">
+
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Mantenimiento activo
+    </div>
+
+    <!-- Logo text -->
+    <div style="margin-bottom:24px; display:flex; align-items:baseline; gap:0;">
+      <span style="font-family:'DM Serif Display',serif; font-size:28px; color:#5a5490; letter-spacing:-0.02em;">Prim</span>
+      <span style="font-family:'DM Serif Display',serif; font-size:28px; color:#5a9e2f; font-weight:700; letter-spacing:-0.02em;">ERP</span>
+      <span style="font-size:11px; color:var(--muted); margin-left:8px; letter-spacing:0.05em;">by iDempiere</span>
+    </div>
+
+    <h1>Volvemos <em>enseguida</em></h1>
+    <p class="subtitle">
+      Estamos aplicando mejoras al sistema <strong style="color:var(--text)">Lirion</strong>.
+      Los datos están protegidos y el servicio se restaurará en breve.
+    </p>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span>Progreso estimado</span>
+        <span>65%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="meta">
+      <div class="meta-item">
+        <div class="meta-label">Tiempo restante</div>
+        <div class="meta-value accent" id="countdown">15:00</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Tipo de tarea</div>
+        <div class="meta-value">Actualización</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Ambiente</div>
+        <div class="meta-value">Producción</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Estado</div>
+        <div class="meta-value" style="color:#5a9e2f">En proceso</div>
+      </div>
+    </div>
+
+    <div class="footer">Prim ERP &mdash; by iDempiere &copy; 2025</div>
+  </div>
+
+  <script>
+    // Countdown: 15 min desde carga de página
+    let total = 15 * 60;
+    const el = document.getElementById('countdown');
+
+    function format(s) {
+      const m = String(Math.floor(s / 60)).padStart(2,'0');
+      const sec = String(s % 60).padStart(2,'0');
+      return `${m}:${sec}`;
+    }
+
+    el.textContent = format(total);
+
+    const timer = setInterval(() => {
+      if (total <= 0) { clearInterval(timer); el.textContent = '00:00'; return; }
+      total--;
+      el.textContent = format(total);
+    }, 1000);
+  </script>
+
+</body>
+</html>

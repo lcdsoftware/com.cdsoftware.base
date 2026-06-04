@@ -1,0 +1,28 @@
+# Manual de Usuario - Proceso Request EMail Processor
+
+## Descripción General
+Este programa es un módulo automatizado concebido para leer un buzón de servidor de correo (IMAP/IMAPS), inspeccionando correos no leídos y transformándolos a modo de conversiones orgánicas en Solicitudes (Requests) persistentes dentro del ecosistema iDempiere. Destaca su capacidad de hilo continuo: si el correo entrante es explícitamente una respuesta o reenvió a un hilo viejo, no generará duplicados si no anexará dichas actualizaciones a la solicitud previamente guardada del sistema en vez de instanciar un ticket inaudito, copiando los datos, el texto plano extraído desde el código HTML y alojando metadatos.
+
+## Parámetros del Proceso Principales
+- **p_IMAPHost** (IMAP Host): Dirección URL/Host del web mail, preferentemente formato protocolo `imaps://` seguidos del servidor. Ej: `imaps://imap.gmail.com:993`.
+- **p_IMAPUser** (IMAP User): Cuenta de correo base a sincronizar para lecturas de peticiones.
+- **p_IMAPPwd** (IMAP Password): Token, contraseña temporal de aplicaciones externas (Si aplica google), o contraseña original de acceso.
+- **p_RequestFolder** (Request Folder): Nombre de subcarpeta en donde se enviará un correo que cumpla y se haya procesado limpiamente su request por la lógica transaccional.
+- **p_InboxFolder** (Inbox Folder): Habitualmente nombrado `INBOX`. Referencia a de dónde se tomarán correos nuevos.
+- **p_ErrorFolder** (Error Folder): Directorio auxiliar (que el proceso intenta usar) para mover de carpeta todos aquellos paquetes de correos que lanzaron una excepción grave durante parseo u operabilidad.
+- **Parametros Asignables/Defaults**: Usted como orquestador podrá definir variables "Default" y forzadas de auto-reemplazo sobre: Client, Role, Socios de negocios precondicionados, User, Categoria del Request, Confidencialismo... Todas se llenarán de antemano a menos que el filtro lo sobrescriba de un match de correo interno conocido.
+
+## Instrucciones de Ejecución
+1. En el menú de iDempiere, localice o presione su shortcut con la palabra "Request EMail Processor". Regularmente esta pestaña puede alojarse para disparos en Programación (Scheduler), se ilustrará su flujo por invocación manual simple.
+   *Sugerencia de captura de pantalla: Menú de Acceso en el cuadro maestro de búsquedas o cronogramas agendables orientados a procesos.*
+2. En la bandeja que despliega un sin fin de campos pre-cargados a completar, ubique prioritariamente la conexión del servidor completando sus credenciales y credenciales IMAP.
+   *Sugerencia de captura de pantalla: Demostración ampliada al recuadro completo o formulario enfocando los apartados de credenciales sin revelar contraseñas genuinas.*
+3. Defina un Tipo de Solicitud (Obligatorio) al cual vincular estos correos y asigne los elementos faltantes por seguridad en la base de datos (Prioridades, Roles...).
+4. Presione el Ícono de OK para despachar el evento.
+   *Sugerencia de captura de pantalla: Icono verde o palomita superior en las pantallas flotantes.*
+5. Dependiendo de los correos recibidos (inbox no leídas) el hilo de ejecución cargará con variables y al cerrar arrojará logs del proceso en la ventana emergente con leyendas totalizadoras: "processInBox - Total=XX - Requests=XX - Errors=XX" ratificandole cuantas factibilizó.
+   *Sugerencia de captura de pantalla: Reportación de logs devueltos confirmando la cuota total iterarada por JavaMail.*
+
+## Consideraciones Adicionales
+- La conexión predeterminada asumirá de factor automático ser vía puerto de SSL (993) dado casos de imaps:// . Si se omite, se lanzarán advertencias en la terminal.
+- El formato HTML por defecto tratará el body del correo convirtiéndolo textualmente y guardándolo como archivo aditivo extra en el módulo "Attachment" dentro de la mesa "Requests". Lo anexa con el fin de poder visualizar tablas robustas o adjuntos adjuntos codificados como base64 no perdibles (incluidas firmas).

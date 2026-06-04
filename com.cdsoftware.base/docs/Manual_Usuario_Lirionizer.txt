@@ -1,0 +1,23 @@
+# Manual de Usuario - Proceso Lirionizer
+
+## Descripción General
+Este proceso permite desplegar la plantilla (theme) de Lirionizer en el servidor de iDempiere, automatizando la copia de los archivos HTML, JSP y el archivo de propiedades del home (`home.properties`). También se encarga de descomprimir y ubicar los recursos de la plantilla en las carpetas adecuadas del servidor Jetty de iDempiere.
+
+## Parámetros del Proceso
+- **jettyPath** (Ruta Jetty): Ruta de acceso pre-configurada (opcionalmente) de su despliegue web de Jetty.
+- **Prefix** (Prefijo del Tema): Prefijo que identifica los archivos del tema a desplegar (ej. miTema).
+
+## Instrucciones de Ejecución
+1. Inicie sesión en iDempiere con sus credenciales formales y acceda a la ventana de ejecución de procesos buscando la opción correspondiente desde el árbol principal de iDempiere.
+   *Sugerencia de captura de pantalla: Ventana principal de iDempiere o caja de búsqueda con el menú para localizar el proceso.*
+2. Abra la opción correspondiente al proceso con nombre "Lirionizer" o el nombre con el que haya sido empaquetado en su instancia local.
+3. Al abrir la ventana de parámetros del proceso, deberá completar los campos obligatorios:
+   - Ingrese el prefijo del tema en el campo **Prefix**. Ejemplo: Lirion.
+   *Sugerencia de captura de pantalla: Ventana emergente con los parámetros mostrados, especificando el contenido rellenado del `Prefix`.*
+4. Haga clic en el botón principal con el chequecito de afirmación [OK] o [Iniciar] para dar inicio al despliegue.
+5. El sistema procesará el reemplazo de archivos silenciosamente y mostrará un mensaje confirmando que "El proceso ha finalizado exitosamente / Proceso Finalizado Exitosamente" sin arrojar excepciones rojas.
+   *Sugerencia de captura de pantalla: Cuadro de diálogo modal de confirmación informando de la finalización exitosa en la esquina inferior de iDempiere.*
+
+## Consideraciones Adicionales
+- Para funcionar, el proceso verifica que exista documentación de plantillas configuradas dentro de un proceso. Específicamente adjuntos cargados con las dependencias para compilar y cargar el .zip (`[Prefix].template.zip`), o el HTML / JSP correspondientes (`[Prefix].idempiere.html`).
+- Se sobreescribirá la antigua versión en la ruta oficial sin pedir confirmación de respaldo. Asegúrese de guardar copias si implementó lógicas a mano.

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIRION — Sistema en Mantenimiento</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #f5f4f4;
+      --surface:  #ffffff;
+      --border:   rgba(0,0,0,0.08);
+      --red:      #c41a1a;
+      --red-dark: #8b0000;
+      --black:    #111111;
+      --text:     #1a1a1a;
+      --muted:    #888888;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ── SUBTLE GRID ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── RED ACCENT STRIPE TOP ── */
+    .stripe {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--red-dark), var(--red), #ff4444, var(--red));
+      background-size: 200% 100%;
+      animation: shimmer 3s linear infinite;
+    }
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to   { background-position: -200% 0; }
+    }
+
+    /* ── GLOW ── */
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+    }
+    .glow-1 {
+      width: 600px; height: 600px;
+      background: var(--red);
+      opacity: 0.06;
+      top: -200px; right: -100px;
+      animation: drift 14s ease-in-out infinite alternate;
+    }
+    .glow-2 {
+      width: 300px; height: 300px;
+      background: var(--black);
+      opacity: 0.05;
+      bottom: -80px; left: -80px;
+      animation: drift 10s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes drift {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(30px, 20px) scale(1.05); }
+    }
+
+    /* ── CARD ── */
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--red);
+      border-radius: 4px 4px 12px 12px;
+      padding: 52px 52px 44px;
+      max-width: 600px;
+      width: calc(100% - 40px);
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.04),
+        0 20px 60px rgba(0,0,0,0.1),
+        0 0 0 1px rgba(196,26,26,0.06);
+      animation: rise 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── LOGO ── */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 36px;
+      user-select: none;
+    }
+    .logo-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: 0.18em;
+      line-height: 1;
+    }
+    .logo-liri { color: var(--black); }
+    .logo-o {
+      position: relative;
+      display: inline-block;
+      color: transparent;
+      width: 0.58em;
+    }
+    /* SVG "O" red sphere illusion */
+    .logo-o svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -53%);
+      width: 0.62em;
+      height: 0.62em;
+    }
+    .logo-n { color: var(--red); }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--red);
+      background: rgba(196,26,26,0.06);
+      border: 1px solid rgba(196,26,26,0.2);
+      border-radius: 3px;
+      padding: 5px 12px;
+      margin-bottom: 20px;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; } 50% { opacity: 0.15; }
+    }
+
+    /* ── HEADING ── */
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(36px, 7vw, 54px);
+      letter-spacing: 0.06em;
+      line-height: 1;
+      color: var(--black);
+      margin-bottom: 12px;
+    }
+    h1 span { color: var(--red); }
+
+    .subtitle {
+      font-size: 14px;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.75;
+      margin-bottom: 36px;
+      max-width: 440px;
+    }
+    .subtitle strong { color: var(--text); font-weight: 500; }
+
+    /* ── PROGRESS ── */
+    .progress-wrap { margin-bottom: 28px; }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      letter-spacing: 0.06em;
+    }
+    .progress-bar {
+      height: 3px;
+      background: rgba(0,0,0,0.07);
+      border-radius: 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red-dark), var(--red));
+      width: 0%;
+      animation: fill 2.2s cubic-bezier(0.4,0,0.2,1) 0.5s forwards;
+    }
+    @keyframes fill { to { width: 65%; } }
+
+    /* ── DIVIDER ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+
+    /* ── META GRID ── */
+    .meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .meta-item {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px 16px;
+      background: #fafafa;
+    }
+    .meta-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .meta-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .meta-value.red   { color: var(--red); font-family: 'DM Mono', monospace; font-size: 20px; }
+    .meta-value.green { color: #2e7d32; }
+
+    /* ── FOOTER ── */
+    .footer {
+      margin-top: 32px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      color: #bbb;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .footer::before, .footer::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="stripe"></div>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="card">
+
+    <!-- LOGO -->
+    <div class="logo">
+      <img src="https://www.lirion.io/wp-content/uploads/2022/05/LIRION_LOGO.png"
+           alt="LIRION"
+           style="height: 64px; width: auto; object-fit: contain;" />
+    </div>
+
+    <div class="badge">
+      <span class="badge-dot"></span>
+      Sistema en mantenimiento
+    </div>
+
+    <h1>Volvemos <span>pronto</span></h1>
+    <p class="subtitle">
+      Estamos aplicando <strong>actualizaciones críticas</strong> al sistema.
+      Tus datos están protegidos. El servicio se restaurará en breve.
+    </p>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span>PROGRESO ESTIMADO</span>
+        <span>65%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+    </div>
+
+    <hr />
+
+    <div class="meta">
+      <div class="meta-item">
+        <div class="meta-label">Tiempo restante</div>
+        <div class="meta-value red" id="countdown">15:00</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Estado</div>
+        <div class="meta-value green">En proceso</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Ambiente</div>
+        <div class="meta-value">Producción</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Tipo</div>
+        <div class="meta-value">Actualización</div>
+      </div>
+    </div>
+
+    <div class="footer">LIRION &mdash; Sistema ERP &copy; 2025</div>
+
+  </div>
+
+  <script>
+    let total = 15 * 60;
+    const el = document.getElementById('countdown');
+    const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    el.textContent = fmt(total);
+    const t = setInterval(() => {
+      if (total <= 0) { clearInterval(t); el.textContent = '00:00'; return; }
+      el.textContent = fmt(--total);
+    }, 1000);
+  </script>
+
+</body>
+</html>

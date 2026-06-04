@@ -1,0 +1,23 @@
+# Manual de Usuario - Proceso Refresh Materialized View
+
+## Descripción General
+Este proceso proporciona una vía gráfica en iDempiere para ejecutar y actualizar (refrescar) vistas materializadas ya existentes y registradas de PostgreSQL. Incluye estrictas medidas de seguridad previniendo inyecciones SQL que restrinjan comandos ajenos, además el mecanismo habilita métodos que permiten realizar el refresco de forma "concurrente" evitando que bloquee operaciones en lectura si la vista está operando activamente.
+
+## Parámetros del Proceso
+- **AD_Table_ID** (Tabla/Vista): Un campo de búsqueda que le permite seleccionar en el diccionario de datos interno, el nombre de la vista materializada la cual desea reactualizar. Obligatorio.
+- **IsConcurrent** (Es Concurrente): Indicador o casilla de verificación que, si se checkea, refrescará la vista de forma concurrente, mitigando la interrupción de consultas simultáneas generadas por reportes masivos por debajo.
+
+## Instrucciones de Ejecución
+1. Inicie abriendo la barra de menú o mediante el panel favorito y localice "Refresh Materialized View". Haga doble clic para visualizar los parámetros de la operación.
+   *Sugerencia de captura de pantalla: El menú tipo árbol enfocado u opción seleccionada con la estrella de favoritos destacando.*
+2. En la ventana pop-up de configuración de trabajo, céntrese en el campo **AD_Table_ID**. Presione su respectivo panel buscador o ingrese textualmente la porción inicial de la Vista Materializada para seleccionarla.
+   *Sugerencia de captura de pantalla: Lista de registros en ventana de búsqueda tras presionar el botón de Lupa.*
+3. Si el DBA garantiza que la vista materializada seleccionada cuenta con un índice definido por clave única en DB, entonces marque asertivamente la casilla/checklist denominada **IsConcurrent**.
+   *Sugerencia de captura de pantalla: Detalle ampliado del diálogo de parámetros con el proceso seleccionado mediante la casilla de chequear palomeada.*
+4. Haga clic en el botón [OK] / check-mark green para mandar a ejecutar la transacción.
+5. El proceso iterá nativamente para buscar el elemento y una vez culmine, mandará un consolidado emergente al centro o fondo que mostrará resultados de tiempo y forma ("Vista materializada actualizada correctamente en ... segundos").
+   *Sugerencia de captura de pantalla: Capturar el resumen satisfactorio que indica el tiempo que duró la recarga en la red o base de datos.*
+
+## Consideraciones Adicionales
+- CUIDADO: Activar el proceso "Es Concurrente" lanzará un error SQL en rojo si intenta cruzarlo con una vista materializada que NO contenga índices puros y únicos a nivel de motor.
+- El sistema incluye una validación base para que el nombre de la vista materializada cumpla estándares alfanuméricos en PostgreSQL (No caráteres en cascada extraños ni terminaciones forzadas, previniendo ciberataques).

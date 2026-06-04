@@ -1,0 +1,24 @@
+# Manual de Usuario - Proceso Unallocated Payments
+
+## Descripción General
+Herramienta analítica de reportería técnica implementada puramente vía un Proceso Java de iDempiere el cual actúa de modo puente. Filtra todos los pagos realizados a proveedores o cobrados por clientes (inclusive pagos mixtos/generalizados) que internamente mantengan montos dispares "Sin Asignar" o su cruce de cuenta contable posea residuo pendiente (Unallocated). Tras ello, extrae las cuasimonedas de la vista maestra `C_Payment_V` y pre-califica sus sobrantes en una tabla paralela de transición (`T_CDS_C_Payment`), la cual es excelente para ser utilizada como origen de datos unificado en un reporte subyacente estructurado tipo JasperReports o pre-visualizado ad-hoc al imprimir.
+
+## Parámetros del Proceso
+- **DateAcct** (Fecha Contable - Date/To Date): Define el parámetro de filtro para seleccionar la fecha operativa de cruce contable. Al ser de tipo Range asume Fecha Inicial y Fecha Final.
+- **IsReceipt** (Es Recibo): Switch identificativo, introduciendo "Y", se priorizan abonos de cartera y cobrados al Cliente. Si presiona "N" se reportan únicamente las salidas de pagos directos a proveedores o comisiones. Vacío, arroja toda la tabla mixta.
+- **C_BPartner_ID** (Socio de Negocio): Variable puente de filtro para extraer exclusivamente anomalías monetarias de un único socio de negocio corporativo en particular.
+
+## Instrucciones de Ejecución
+1. Sitúese en su navegador web dentro de iDempiere y dirija sus acciones sobre el menú de búsquedas y navegue hacia o teclee el módulo "Unallocated Payments".
+   *Sugerencia de captura de pantalla: Menú filtrado con la frase escrita mostrando el componente con el icono de un piñon o reporte visualizandose.*
+2. El sistema aperturará una pre-vista de configuración transaccional. Sitúe su atención en la dupla de calendarización "DateAcct", clickeando sobre el ícono del mini-calendario elija el piso temporal de inicio de búsqueda y en su lado lateral estipule su fecha tope.
+   *Sugerencia de captura de pantalla: Zoom estético de iDempiere abriendo el diálogo tipo datepicker y seleccionando recuadro rojo el rango en calendario.*
+3. Dependiendo lo solicitado, diríjase al componente "IsReceipt" para especificar si reportará Cuentas x Cobrar (Recibo activo) o Pagos (Cobro en No), y en seguida si el volumen estipulado requiere depuración ingrese qué socio auditar y selecciónelo en búsqueda.
+   *Sugerencia de captura de pantalla: Despliegue de los parámetros IsReceipt limitando los casos mostrados.*
+4. De un clic sostenido sobre el botón principal en [Comenzar/OK] e inmediatamente se rellenarán las secuencias.
+5. De estar esto sujeto puramente al modelo tipo "Reporte", el flujo desencadenará instantáneamente y renderizará una pestaña paralela visual emitiendo el PDF / visor de JasperReport consolidado, listando todas las sumas abiertas de "Open Amount" con montos faltantes en columnas precisas.
+   *Sugerencia de captura de pantalla: Resultado renderizado del formato del reporte de pagos abierto cargado para visibilización web interactiva con montos reflejados.*
+
+## Consideraciones Adicionales
+- La variable más importante dentro del componente sub-escrito a nivel técnico de cara al formato reporte devuelto será `openamttodate` (Monto Abierto restante actual por ser asignado/cruzado) seguido de `allocatedamttodate` (Monto sí consolidado con facturas de ser parcial la cuota).
+- La información de cálculos temporales cruzará a tabla estática hasta nuevo borrado, es un reflejo snapshot transaccional que utiliza su pin de sesión o cliente de forma hermética usando el número instanciable en ID para no mezclar las métricas generadas con los demás empleados operando el mismo reporte.
