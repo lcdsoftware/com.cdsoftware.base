@@ -11,18 +11,7 @@ pipeline {
             agent any
             steps {
                 script {
-                    def jobDescription = """
-                    <b>Plugin:</b> ${env.PLUGIN_NAME}<br/>
-                    <b>iDempiere:</b> ${env.IDEMPIERE_VERSION}<br/>
-                    <b>Branch:</b> ${env.BRANCH_NAME ?: 'N/A'}<br/>
-                    <b>Job:</b> ${env.JOB_NAME}<br/>
-                    """
-
                     currentBuild.description = "${env.PLUGIN_NAME} - Build #${env.BUILD_NUMBER}"
-
-                    currentBuild.rawBuild
-                        .getParent()
-                        .setDescription(jobDescription)
 
                     echo "Descripción del build y del proyecto actualizada correctamente."
                 }
