@@ -2,9 +2,10 @@ Manifest-Version: 1.0
 Bundle-Category: idempiere-plugin
 Bundle-ManifestVersion: 2
 Bundle-Name: com.cdsoftware.base
-Bundle-SymbolicName: com.cdsoftware.base
+Bundle-SymbolicName: com.cdsoftware.base;singleton:=true
 Bundle-Version: 12.0.0.qualifier
 Bundle-Vendor: cdsoftware
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.apache.commons.lang3,
  org.adempiere.base,
