@@ -9,7 +9,7 @@ pipeline {
             agent {
                 docker {
                     image 'carl0jgr/idempiere-source-builder:12'
-                    args '--entrypoint=\'\' -u root:root -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
+                    args '--entrypoint=\'\' -u $(id -u):$(id -g) -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
                 }
             }
             steps {
@@ -21,7 +21,7 @@ pipeline {
             agent {
                 docker {
                     image 'carl0jgr/idempiere-source-builder:12'
-                    args '--entrypoint=\'\' -u root:root -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
+                    args '--entrypoint=\'\' -u $(id -u):$(id -g) -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
                 }
             }
             steps {
