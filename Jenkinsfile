@@ -9,7 +9,7 @@ pipeline {
             agent {
                 docker {
                     image 'carl0jgr/idempiere-source-builder:12'
-                    args '--entrypoint=\'\' -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
+                    args '--entrypoint=\'\' -u root:root -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
                 }
             }
             steps {
@@ -21,7 +21,7 @@ pipeline {
             agent {
                 docker {
                     image 'carl0jgr/idempiere-source-builder:12'
-                    args '--entrypoint=\'\' -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
+                    args '--entrypoint=\'\' -u root:root -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
                 }
             }
             steps {
@@ -36,7 +36,13 @@ pipeline {
             }
             post {
                 always {
-                    junit testResults: "${PLUGIN_NAME}.test/target/surefire-reports/*.xml", allowEmptyResults: false
+                    script {
+                        if (fileExists("${PLUGIN_NAME}.test/target/surefire-reports")) {
+                            junit testResults: "${PLUGIN_NAME}.test/target/surefire-reports/*.xml", allowEmptyResults: false
+                        } else {
+                            echo 'Surefire reports were not produced because the build stopped before test execution.'
+                        }
+                    }
                 }
                 cleanup {
                     dir('target-platform') {
