@@ -9,7 +9,7 @@ pipeline {
             agent {
                 docker {
                     image 'carl0jgr/idempiere-source-builder:12'
-                    args '--entrypoint=\'\' -u $(id -u):$(id -g) -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
+                    args '--entrypoint=\'\' -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
                 }
             }
             steps {
@@ -21,12 +21,13 @@ pipeline {
             agent {
                 docker {
                     image 'carl0jgr/idempiere-source-builder:12'
-                    args '--entrypoint=\'\' -u $(id -u):$(id -g) -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
+                    args '--entrypoint=\'\' -v /var/jenkins_home/.m2:/m2 -e MAVEN_OPTS=-Dmaven.repo.local=/m2'
                 }
             }
             steps {
                 dir('target-platform') {
                     git branch: '12.0', url: 'https://github.com/ingeint/idempiere-target-platform-plugin.git'
+                    sh 'rm -f TargetPlatformPomGenerator*.class TargetPlatformPluginTagger*.class'
                     sh 'rm -rf target release'
                     sh './plugin-builder build ../${PLUGIN_NAME} ../${PLUGIN_NAME}.test'
                     sh '../ci/validate-artifacts.sh target "${BUILD_NUMBER}"'
