@@ -4,6 +4,7 @@ Bundle-Name: com.cdsoftware.base Test
 Bundle-SymbolicName: com.cdsoftware.base.test
 Bundle-Version: 12.0.0.qualifier
 Bundle-Vendor: cdsoftware
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Fragment-Host: com.cdsoftware.base
 Bundle-ClassPath: .,
  lib/junit-jupiter-engine.jar,

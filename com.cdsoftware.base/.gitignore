@@ -3,3 +3,6 @@ target/
 lib/
 *~
 .directory
+.classpath
+.project
+.settings/
