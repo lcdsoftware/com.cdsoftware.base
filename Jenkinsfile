@@ -27,6 +27,7 @@ pipeline {
             steps {
                 dir('target-platform') {
                     git branch: '12.0', url: 'https://github.com/ingeint/idempiere-target-platform-plugin.git'
+                    sh 'rm -f TargetPlatformPomGenerator*.class TargetPlatformPluginTagger*.class'
                     sh 'rm -rf target release'
                     sh './plugin-builder build ../${PLUGIN_NAME} ../${PLUGIN_NAME}.test'
                     sh '../ci/validate-artifacts.sh target "${BUILD_NUMBER}"'
@@ -36,7 +37,13 @@ pipeline {
             }
             post {
                 always {
-                    junit testResults: "${PLUGIN_NAME}.test/target/surefire-reports/*.xml", allowEmptyResults: false
+                    script {
+                        if (fileExists("${PLUGIN_NAME}.test/target/surefire-reports")) {
+                            junit testResults: "${PLUGIN_NAME}.test/target/surefire-reports/*.xml", allowEmptyResults: false
+                        } else {
+                            echo 'Surefire reports were not produced because the build stopped before test execution.'
+                        }
+                    }
                 }
                 cleanup {
                     dir('target-platform') {
